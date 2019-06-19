@@ -1,6 +1,7 @@
 kotlin {
     js {
         nodejs()
+        browser()
 
         compilations.main.kotlinOptions {
             metaInfo = true

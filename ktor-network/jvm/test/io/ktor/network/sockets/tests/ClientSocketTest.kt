@@ -35,6 +35,7 @@ class ClientSocketTest {
         server?.let { (server, thread) ->
             server.close()
             thread.interrupt()
+            thread.join()
         }
         selector.close()
         exec.shutdown()
@@ -107,13 +108,18 @@ class ClientSocketTest {
                     val client = try {
                         server.accept()
                     } catch (t: Throwable) {
+                        if (!server.isClosed) {
+                            throw t
+                        }
                         break
                     }
 
                     client.use(block)
                 }
             } catch (t: Throwable) {
-                errors.addError(t)
+                synchronized(errors) {
+                    errors.addError(t)
+                }
             }
         }
 

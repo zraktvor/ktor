@@ -6,8 +6,21 @@ kotlin {
             }
         }
     }
-}
 
-kotlin.sourceSets.commonMain.dependencies {
-    api project(':ktor-io')
+    js {
+        browser {
+            testTask {
+                excludes += ["io.ktor.tests.utils.logging.ActualFileSystemTest.*"]
+            }
+        }
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            api project(':ktor-io')
+        }
+        jsMain.dependencies {
+            api(npm("fs", "*"))
+        }
+    }
 }

@@ -5,56 +5,44 @@
 package io.ktor.locations
 
 import io.ktor.http.*
-import io.ktor.routing.*
+import io.ktor.util.*
 import kotlinx.serialization.*
+import kotlinx.serialization.Encoder
 import kotlinx.serialization.modules.*
 
 @KtorExperimentalLocationsAPI
 internal class URLEncoder(
-    override val context: SerialModule
+    override val context: SerialModule,
+    private val conversionService: ConversionService = DefaultConversionService
 ) : Encoder, CompositeEncoder {
-    private val builder = URLBuilder()
-    private val unspecified = String()
     private val pathParameters = ParametersBuilder()
+    private val queryParameters = ParametersBuilder()
 
-    private var path: String? = null
-
-    private fun path(path: String) {
-        check(this.path == null)
-        this.path = path
-        pathParameters.clear()
-
-        val parsed = RoutingPath.parse(path)
-        val pattern = "\\{([a-zA-Z0-9_-]*)(\\?|...)?}".toRegex()
-        parsed.parts.asSequence().filter { it.kind == RoutingPathSegmentKind.Parameter }.flatMap {
-            pattern.findAll(it.value).mapNotNull { parameter -> parameter.groups[1]?.value }
-        }.forEach { parameterName ->
-            pathParameters.append(parameterName, unspecified)
-        }
-    }
+    private var pattern: LocationPattern? = null
+    private var currentElementName: String? = null
 
     override fun beginStructure(desc: SerialDescriptor, vararg typeParams: KSerializer<*>): CompositeEncoder {
-        if (path == null) {
-            val path = desc.getEntityAnnotations().filterIsInstance<Location>().map { it.path }.single()
-            path(path)
+        if (desc.kind == StructureKind.CLASS && this.pattern == null) {
+            this.pattern = buildLocationPattern(desc)
         }
+
         return this
     }
 
     override fun encodeBoolean(value: Boolean) {
-        TODO("Not yet implemented")
+        encodeString(value.toString())
     }
 
     override fun encodeByte(value: Byte) {
-        TODO("Not yet implemented")
+        encodeString(value.toString())
     }
 
     override fun encodeChar(value: Char) {
-        TODO("Not yet implemented")
+        encodeString(value.toString())
     }
 
     override fun encodeDouble(value: Double) {
-        TODO("Not yet implemented")
+        encodeString(value.toString())
     }
 
     override fun encodeEnum(enumDescription: SerialDescriptor, ordinal: Int) {
@@ -62,35 +50,42 @@ internal class URLEncoder(
     }
 
     override fun encodeFloat(value: Float) {
-        TODO("Not yet implemented")
+        encodeString(value.toString())
     }
 
     override fun encodeInt(value: Int) {
-        TODO("Not yet implemented")
+        encodeString(value.toString())
     }
 
     override fun encodeLong(value: Long) {
-        TODO("Not yet implemented")
+        encodeString(value.toString())
     }
 
     override fun encodeNotNullMark() {
-        TODO("Not yet implemented")
+        error("Encoding a primitive to URL is not supported")
     }
 
     override fun encodeNull() {
-        TODO("Not yet implemented")
+        error("Encoding a primitive to URL is not supported")
     }
 
     override fun encodeShort(value: Short) {
-        TODO("Not yet implemented")
+        encodeString(value.toString())
     }
 
     override fun encodeString(value: String) {
-        TODO("Not yet implemented")
+        val name = currentElementName!!
+        val pattern = pattern!!
+
+        if (name in pattern.pathParameterNames) {
+            pathParameters.append(name, value)
+        } else {
+            queryParameters.append(name, value)
+        }
     }
 
     override fun encodeUnit() {
-        TODO("Not yet implemented")
+        encodeString("Unit")
     }
 
     override fun encodeBooleanElement(desc: SerialDescriptor, index: Int, value: Boolean) {
@@ -132,7 +127,7 @@ internal class URLEncoder(
         value: T?
     ) {
         if (value != null) {
-            serializer.serialize(this, value)
+            encodeSerializableElement(desc, index, serializer, value)
         }
     }
 
@@ -142,7 +137,30 @@ internal class URLEncoder(
         serializer: SerializationStrategy<T>,
         value: T
     ) {
-        serializer.serialize(this, value)
+        val before = currentElementName
+        val name = when (desc.kind) {
+            StructureKind.CLASS -> desc.getElementName(index)
+            else -> before
+        }
+
+        currentElementName = name
+        try {
+            val elementDescriptor = desc.getElementDescriptor(index)
+            if (name != null && elementDescriptor.location == null && elementDescriptor.kind == StructureKind.CLASS) {
+                try {
+                    conversionService.toValues(value).forEach { valueComponent ->
+                        encodeElement(name, valueComponent)
+                    }
+
+                    return
+                } catch (_: DataConversionException) {
+                }
+            }
+
+            serializer.serialize(this, value)
+        } finally {
+            currentElementName = before
+        }
     }
 
     override fun encodeShortElement(desc: SerialDescriptor, index: Int, value: Short) {
@@ -159,57 +177,28 @@ internal class URLEncoder(
 
     private fun encodeElement(desc: SerialDescriptor, index: Int, stringified: String) {
         val name = desc.getElementName(index)
-        if (name in pathParameters) {
+        encodeElement(name, stringified)
+    }
+
+    private fun encodeElement(name: String, stringified: String) {
+        val pattern = pattern ?: error("No @Location annotation found")
+
+        if (name in pattern.pathParameterNames) {
             pathParameters[name] = stringified
         } else {
-            builder.parameters[name] = stringified
+            queryParameters.append(name, stringified)
         }
     }
 
     fun build(): Url {
-        check(pathParameters.entries().none { it.value.single() === unspecified })
-        val parsed = RoutingPath.parse(path ?: "/")
-        val pattern = "\\{([a-zA-Z0-9_-]*)(\\?|...)?}".toRegex()
-        val suffix = when {
-            path?.lastOrNull() == '/' -> "/"
-            else -> ""
-        }
-        val actualPath =
-            parsed.parts.asSequence().map { part ->
-                when (part.kind) {
-                    RoutingPathSegmentKind.Constant -> part.value.encodeURLPath()
-                    RoutingPathSegmentKind.Parameter -> pattern.replace(part.value) { result ->
-                        val parameterName = result.groups[1]?.value ?: return@replace ""
-                        val value = pathParameters[parameterName] ?: return@replace ""
-                        value.encodeURLPath()
-                    }
-                }
-            }.filter { it.isNotEmpty() }.joinToString(separator = "/", prefix = "/", postfix = suffix)
+        val pattern = pattern ?: error("No @Location annotation found.")
 
-        builder.encodedPath = actualPath
+        val builder = URLBuilder(
+            parameters = queryParameters,
+            encodedPath = pattern.format(pathParameters.build())
+        )
 
         return builder.build()
     }
 }
 
-@Serializable
-private data class C(val b: String)
-
-@KtorExperimentalLocationsAPI
-@Serializable
-@Location("/path/{a}/")
-private data class Xy(val a: String, val b: String, val c: C)
-
-/**
- * Test entry point
- */
-@KtorExperimentalLocationsAPI
-@UseExperimental(ImplicitReflectionSerializer::class)
-fun main() {
-    val serializer = Xy::class.serializer()
-    val encoder = URLEncoder(EmptyModule)
-
-    serializer.serialize(encoder, Xy("111", "222", C("333")))
-
-    println(encoder.build())
-}

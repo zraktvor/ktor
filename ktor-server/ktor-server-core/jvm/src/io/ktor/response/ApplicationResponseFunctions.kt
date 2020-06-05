@@ -25,6 +25,7 @@ suspend inline fun ApplicationCall.respond(message: Any) {
  * Sets [status] and sends a [message] as a response
  */
 @Suppress("NOTHING_TO_INLINE")
+@MustRespond<HttpStatusCode>
 suspend inline fun ApplicationCall.respond(status: HttpStatusCode, message: Any) {
     response.status(status)
     response.pipeline.execute(this, message)
@@ -33,6 +34,7 @@ suspend inline fun ApplicationCall.respond(status: HttpStatusCode, message: Any)
 /**
  * Responds to a client with a `301 Moved Permanently` or `302 Found` redirect
  */
+@MustRespond2<HttpStatusCode.Companion.MovedPermanentlyCode, HttpStatusCode.Companion.FoundCode>
 suspend fun ApplicationCall.respondRedirect(url: String, permanent: Boolean = false) {
     response.headers.append(HttpHeaders.Location, url)
     respond(if (permanent) HttpStatusCode.MovedPermanently else HttpStatusCode.Found)
@@ -42,6 +44,7 @@ suspend fun ApplicationCall.respondRedirect(url: String, permanent: Boolean = fa
  * Responds to a client with a `301 Moved Permanently` or `302 Found` redirect.
  * Unlike the other [respondRedirect] it provides a way to build URL based on current call using [block] function
  */
+@MustRespond2<HttpStatusCode.Companion.MovedPermanentlyCode, HttpStatusCode.Companion.FoundCode>
 suspend inline fun ApplicationCall.respondRedirect(permanent: Boolean = false, block: URLBuilder.() -> Unit) {
     respondRedirect(url(block), permanent)
 }
@@ -51,6 +54,7 @@ suspend inline fun ApplicationCall.respondRedirect(permanent: Boolean = false, b
  * @param contentType is an optional [ContentType], default is [ContentType.Text.Plain]
  * @param status is an optional [HttpStatusCode], default is [HttpStatusCode.OK]
  */
+@MustRespond<TextContent>
 suspend fun ApplicationCall.respondText(text: String, contentType: ContentType? = null, status: HttpStatusCode? = null, configure: OutgoingContent.() -> Unit = {}) {
     val message = TextContent(text, defaultTextContentType(contentType), status).apply(configure)
     respond(message)
@@ -61,6 +65,7 @@ suspend fun ApplicationCall.respondText(text: String, contentType: ContentType? 
  * @param contentType is an optional [ContentType], default is [ContentType.Text.Plain]
  * @param status is an optional [HttpStatusCode], default is [HttpStatusCode.OK]
  */
+@MustRespond<TextContent>
 suspend fun ApplicationCall.respondText(contentType: ContentType? = null, status: HttpStatusCode? = null, provider: suspend () -> String) {
     val message = TextContent(provider(), defaultTextContentType(contentType), status)
     respond(message)
@@ -71,6 +76,7 @@ suspend fun ApplicationCall.respondText(contentType: ContentType? = null, status
  * @param contentType is an optional [ContentType], unspecified by default
  * @param status is an optional [HttpStatusCode], default is [HttpStatusCode.OK]
  */
+@MustRespond<ByteArrayContent>
 suspend fun ApplicationCall.respondBytes(contentType: ContentType? = null, status: HttpStatusCode? = null, provider: suspend () -> ByteArray) {
     respond(ByteArrayContent(provider(), contentType, status))
 }
@@ -80,6 +86,7 @@ suspend fun ApplicationCall.respondBytes(contentType: ContentType? = null, statu
  * @param contentType is an optional [ContentType], unspecified by default
  * @param status is an optional [HttpStatusCode], default is [HttpStatusCode.OK]
  */
+@MustRespond<ByteArrayContent>
 suspend fun ApplicationCall.respondBytes(bytes: ByteArray, contentType: ContentType? = null, status: HttpStatusCode? = null, configure: OutgoingContent.() -> Unit = {}) {
     respond(ByteArrayContent(bytes, contentType, status).apply(configure))
 }
@@ -87,6 +94,7 @@ suspend fun ApplicationCall.respondBytes(bytes: ByteArray, contentType: ContentT
 /**
  * Responds to a client with a contents of a file with the name [fileName] in the [baseDir] folder
  */
+@MustRespond<LocalFileContent>
 suspend fun ApplicationCall.respondFile(baseDir: File, fileName: String, configure: OutgoingContent.() -> Unit = {}) {
     val message = LocalFileContent(baseDir, fileName).apply(configure)
     respond(message)
@@ -95,6 +103,7 @@ suspend fun ApplicationCall.respondFile(baseDir: File, fileName: String, configu
 /**
  * Responds to a client with a contents of a [file]
  */
+@MustRespond<LocalFileContent>
 suspend fun ApplicationCall.respondFile(file: File, configure: OutgoingContent.() -> Unit = {}) {
     val message = LocalFileContent(file).apply(configure)
     respond(message)
@@ -106,6 +115,7 @@ suspend fun ApplicationCall.respondFile(file: File, configure: OutgoingContent.(
  * The [writer] parameter will be called later when engine is ready to produce content.
  * Provided [Writer] will be closed automatically.
  */
+@MustRespond<WriterContent>
 suspend fun ApplicationCall.respondTextWriter(contentType: ContentType? = null, status: HttpStatusCode? = null, writer: suspend Writer.() -> Unit) {
     val message = WriterContent(writer, defaultTextContentType(contentType), status)
     respond(message)
@@ -117,6 +127,7 @@ suspend fun ApplicationCall.respondTextWriter(contentType: ContentType? = null, 
  * The [producer] parameter will be called later when engine is ready to produce content. You don't need to close it.
  * Provided [OutputStream] will be closed automatically.
  */
+@MustRespond<OutputStreamContent>
 suspend fun ApplicationCall.respondOutputStream(contentType: ContentType? = null, status: HttpStatusCode? = null, producer: suspend OutputStream.() -> Unit) {
     val message = OutputStreamContent(producer, contentType ?: ContentType.Application.OctetStream, status)
     respond(message)
@@ -129,6 +140,7 @@ suspend fun ApplicationCall.respondOutputStream(contentType: ContentType? = null
  * Provided [ByteWriteChannel] will be closed automatically.
  */
 @KtorExperimentalAPI
+@MustRespond<ChannelWriterContent>
 suspend fun ApplicationCall.respondBytesWriter(
     contentType: ContentType? = null,
     status: HttpStatusCode? = null,

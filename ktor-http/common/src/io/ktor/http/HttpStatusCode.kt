@@ -4,13 +4,14 @@
 
 package io.ktor.http
 
+
 /**
  * Represents an HTTP status code and description.
  * @param value is a numeric code.
  * @param description is free form description of a status.
  */
-@Suppress("unused")
-data class HttpStatusCode(val value: Int, val description: String) {
+@Suppress("unused", "UNCHECKED_CAST")
+open class HttpStatusCode(val value: Int, val description: String) {
     override fun toString(): String = "$value $description"
 
     override fun equals(other: Any?): Boolean = other is HttpStatusCode && other.value == value
@@ -20,7 +21,7 @@ data class HttpStatusCode(val value: Int, val description: String) {
     /**
      * Returns a copy of `this` code with a description changed to [value].
      */
-    fun description(value: String): HttpStatusCode = copy(description = value)
+    fun description(value: String): HttpStatusCode = HttpStatusCode(value = this.value, description = value)
 
     @Suppress("KDocMissingDocumentation", "PublicApiImplicitType")
     companion object {
@@ -29,63 +30,217 @@ data class HttpStatusCode(val value: Int, val description: String) {
         // Adding a new status code here please remember [allStatusCodes] as well
         //
 
-        val Continue = HttpStatusCode(100, "Continue")
-        val SwitchingProtocols = HttpStatusCode(101, "Switching Protocols")
-        val Processing = HttpStatusCode(102, "Processing")
+        class ContinueCode : HttpStatusCode(100, "ContinueCode")
 
-        val OK = HttpStatusCode(200, "OK")
-        val Created = HttpStatusCode(201, "Created")
-        val Accepted = HttpStatusCode(202, "Accepted")
-        val NonAuthoritativeInformation = HttpStatusCode(203, "Non-Authoritative Information")
-        val NoContent = HttpStatusCode(204, "No Content")
-        val ResetContent = HttpStatusCode(205, "Reset Content")
-        val PartialContent = HttpStatusCode(206, "Partial Content")
-        val MultiStatus = HttpStatusCode(207, "Multi-Status")
+        val Continue = ContinueCode()
 
-        val MultipleChoices = HttpStatusCode(300, "Multiple Choices")
-        val MovedPermanently = HttpStatusCode(301, "Moved Permanently")
-        val Found = HttpStatusCode(302, "Found")
-        val SeeOther = HttpStatusCode(303, "See Other")
-        val NotModified = HttpStatusCode(304, "Not Modified")
-        val UseProxy = HttpStatusCode(305, "Use Proxy")
-        val SwitchProxy = HttpStatusCode(306, "Switch Proxy")
-        val TemporaryRedirect = HttpStatusCode(307, "Temporary Redirect")
-        val PermanentRedirect = HttpStatusCode(308, "Permanent Redirect")
+        class SwitchingProtocolsCode : HttpStatusCode(101, "Switching Protocols")
 
-        val BadRequest = HttpStatusCode(400, "Bad Request")
-        val Unauthorized = HttpStatusCode(401, "Unauthorized")
-        val PaymentRequired = HttpStatusCode(402, "Payment Required")
-        val Forbidden = HttpStatusCode(403, "Forbidden")
-        val NotFound = HttpStatusCode(404, "Not Found")
-        val MethodNotAllowed = HttpStatusCode(405, "Method Not Allowed")
-        val NotAcceptable = HttpStatusCode(406, "Not Acceptable")
-        val ProxyAuthenticationRequired = HttpStatusCode(407, "Proxy Authentication Required")
-        val RequestTimeout = HttpStatusCode(408, "Request Timeout")
-        val Conflict = HttpStatusCode(409, "Conflict")
-        val Gone = HttpStatusCode(410, "Gone")
-        val LengthRequired = HttpStatusCode(411, "Length Required")
-        val PreconditionFailed = HttpStatusCode(412, "Precondition Failed")
-        val PayloadTooLarge = HttpStatusCode(413, "Payload Too Large")
-        val RequestURITooLong = HttpStatusCode(414, "Request-URI Too Long")
+        val SwitchingProtocols = SwitchingProtocolsCode()
 
-        val UnsupportedMediaType = HttpStatusCode(415, "Unsupported Media Type")
-        val RequestedRangeNotSatisfiable = HttpStatusCode(416, "Requested Range Not Satisfiable")
-        val ExpectationFailed = HttpStatusCode(417, "Expectation Failed")
-        val UnprocessableEntity = HttpStatusCode(422, "Unprocessable Entity")
-        val Locked = HttpStatusCode(423, "Locked")
-        val FailedDependency = HttpStatusCode(424, "Failed Dependency")
-        val UpgradeRequired = HttpStatusCode(426, "Upgrade Required")
-        val TooManyRequests = HttpStatusCode(429, "Too Many Requests")
-        val RequestHeaderFieldTooLarge = HttpStatusCode(431, "Request Header Fields Too Large")
+        class ProcessingCode : HttpStatusCode(102, "ProcessingCode")
 
-        val InternalServerError = HttpStatusCode(500, "Internal Server Error")
-        val NotImplemented = HttpStatusCode(501, "Not Implemented")
-        val BadGateway = HttpStatusCode(502, "Bad Gateway")
-        val ServiceUnavailable = HttpStatusCode(503, "Service Unavailable")
-        val GatewayTimeout = HttpStatusCode(504, "Gateway Timeout")
-        val VersionNotSupported = HttpStatusCode(505, "HTTP Version Not Supported")
-        val VariantAlsoNegotiates = HttpStatusCode(506, "Variant Also Negotiates")
-        val InsufficientStorage = HttpStatusCode(507, "Insufficient Storage")
+        val Processing = ProcessingCode()
+
+        class OKCode : HttpStatusCode(200, "OKCode")
+
+        val OK = OKCode()
+
+        class CreatedCode : HttpStatusCode(201, "CreatedCode")
+
+        val Created = CreatedCode()
+
+        class AcceptedCode : HttpStatusCode(202, "AcceptedCode")
+
+        val Accepted = AcceptedCode()
+
+        class NonAuthoritativeInformationCode :
+            HttpStatusCode(203, "Non-Authoritative Information")
+
+        val NonAuthoritativeInformation = NonAuthoritativeInformationCode()
+
+        class NoContentCode : HttpStatusCode(204, "No Content")
+
+        val NoContent = NoContentCode()
+
+        class ResetContentCode : HttpStatusCode(205, "Reset Content")
+
+        val ResetContent = ResetContentCode()
+
+        class PartialContentCode : HttpStatusCode(206, "Partial Content")
+
+        val PartialContent = PartialContentCode()
+
+        class MultiStatusCode : HttpStatusCode(207, "Multi-Status")
+
+        val MultiStatus = MultiStatusCode()
+
+        class MultipleChoicesCode : HttpStatusCode(300, "Multiple Choices")
+
+        val MultipleChoices = MultipleChoicesCode()
+
+        class MovedPermanentlyCode : HttpStatusCode(301, "Moved Permanently")
+
+        val MovedPermanently = MovedPermanentlyCode()
+
+        class FoundCode : HttpStatusCode(302, "FoundCode")
+
+        val Found = FoundCode()
+
+        class SeeOtherCode : HttpStatusCode(303, "See Other")
+
+        val SeeOther = SeeOtherCode()
+
+        class NotModifiedCode : HttpStatusCode(304, "Not Modified")
+
+        val NotModified = NotModifiedCode()
+
+        class UseProxyCode : HttpStatusCode(305, "Use Proxy")
+
+        val UseProxy = UseProxyCode()
+
+        class SwitchProxyCode : HttpStatusCode(306, "Switch Proxy")
+
+        val SwitchProxy = SwitchProxyCode()
+
+        class TemporaryRedirectCode : HttpStatusCode(307, "Temporary Redirect")
+
+        val TemporaryRedirect = TemporaryRedirectCode()
+
+        class PermanentRedirectCode : HttpStatusCode(308, "Permanent Redirect")
+
+        val PermanentRedirect = PermanentRedirectCode()
+
+        class BadRequestCode : HttpStatusCode(400, "Bad Request")
+
+        val BadRequest = BadRequestCode()
+
+        class UnauthorizedCode : HttpStatusCode(401, "UnauthorizedCode")
+
+        val Unauthorized = UnauthorizedCode()
+
+        class PaymentRequiredCode : HttpStatusCode(402, "Payment Required")
+
+        val PaymentRequired = PaymentRequiredCode()
+
+        class ForbiddenCode : HttpStatusCode(403, "ForbiddenCode")
+
+        val Forbidden = ForbiddenCode()
+
+        class NotFoundCode : HttpStatusCode(404, "Not Found")
+
+        val NotFound = NotFoundCode()
+
+        class MethodNotAllowedCode : HttpStatusCode(405, "Method Not Allowed")
+
+        val MethodNotAllowed = MethodNotAllowedCode()
+
+        class NotAcceptableCode : HttpStatusCode(406, "Not Acceptable")
+
+        val NotAcceptable = NotAcceptableCode()
+
+        class ProxyAuthenticationRequiredCode :
+            HttpStatusCode(407, "Proxy Authentication Required")
+
+        val ProxyAuthenticationRequired = ProxyAuthenticationRequiredCode()
+
+        class RequestTimeoutCode : HttpStatusCode(408, "Request Timeout")
+
+        val RequestTimeout = RequestTimeoutCode()
+
+        class ConflictCode : HttpStatusCode(409, "ConflictCode")
+
+        val Conflict = ConflictCode()
+
+        class GoneCode : HttpStatusCode(410, "GoneCode")
+
+        val Gone = GoneCode()
+
+        class LengthRequiredCode : HttpStatusCode(411, "Length Required")
+
+        val LengthRequired = LengthRequiredCode()
+
+        class PreconditionFailedCode : HttpStatusCode(412, "Precondition Failed")
+
+        val PreconditionFailed = PreconditionFailedCode()
+
+        class PayloadTooLargeCode : HttpStatusCode(413, "Payload Too Large")
+
+        val PayloadTooLarge = PayloadTooLargeCode()
+
+        class RequestURITooLongCode : HttpStatusCode(414, "Request-URI Too Long")
+
+        val RequestURITooLong = RequestURITooLongCode()
+
+        class UnsupportedMediaTypeCode : HttpStatusCode(415, "Unsupported Media Type")
+
+        val UnsupportedMediaType = UnsupportedMediaTypeCode()
+
+        class RequestedRangeNotSatisfiableCode :
+            HttpStatusCode(416, "Requested Range Not Satisfiable")
+
+        val RequestedRangeNotSatisfiable = RequestedRangeNotSatisfiableCode()
+
+        class ExpectationFailedCode : HttpStatusCode(417, "Expectation Failed")
+
+        val ExpectationFailed = ExpectationFailedCode()
+
+        class UnprocessableEntityCode : HttpStatusCode(422, "Unprocessable Entity")
+
+        val UnprocessableEntity = UnprocessableEntityCode()
+
+        class LockedCode : HttpStatusCode(423, "LockedCode")
+
+        val Locked = LockedCode()
+
+        class FailedDependencyCode : HttpStatusCode(424, "Failed Dependency")
+
+        val FailedDependency = FailedDependencyCode()
+
+        class UpgradeRequiredCode : HttpStatusCode(426, "Upgrade Required")
+
+        val UpgradeRequired = UpgradeRequiredCode()
+
+        class TooManyRequestsCode : HttpStatusCode(429, "Too Many Requests")
+
+        val TooManyRequests = TooManyRequestsCode()
+
+        class RequestHeaderFieldTooLargeCode :
+            HttpStatusCode(431, "Request Header Fields Too Large")
+
+        val RequestHeaderFieldTooLarge = RequestHeaderFieldTooLargeCode()
+
+        class InternalServerErrorCode : HttpStatusCode(500, "Internal Server Error")
+
+        val InternalServerError = InternalServerErrorCode()
+
+        class NotImplementedCode : HttpStatusCode(501, "Not Implemented")
+
+        val NotImplemented = NotImplementedCode()
+
+        class BadGatewayCode : HttpStatusCode(502, "Bad Gateway")
+
+        val BadGateway = BadGatewayCode()
+
+        class ServiceUnavailableCode : HttpStatusCode(503, "Service Unavailable")
+
+        val ServiceUnavailable = ServiceUnavailableCode()
+
+        class GatewayTimeoutCode : HttpStatusCode(504, "Gateway Timeout")
+
+        val GatewayTimeout = GatewayTimeoutCode()
+
+        class VersionNotSupportedCode : HttpStatusCode(505, "HTTP Version Not Supported")
+
+        val VersionNotSupported = VersionNotSupportedCode()
+
+        class VariantAlsoNegotiatesCode : HttpStatusCode(506, "Variant Also Negotiates")
+
+        val VariantAlsoNegotiates = VariantAlsoNegotiatesCode()
+
+        class InsufficientStorageCode : HttpStatusCode(507, "Insufficient Storage")
+
+        val InsufficientStorage = InsufficientStorageCode()
 
         /**
          * All known status codes
@@ -96,12 +251,14 @@ data class HttpStatusCode(val value: Int, val description: String) {
             allStatusCodes.firstOrNull { it.value == idx }
         }
 
+        class UnknownHttpStatusCode(value: Int) : HttpStatusCode(value, "Unknown Status Code")
+
         /**
          * Creates an instance of [HttpStatusCode] with the given numeric value.
          */
         fun fromValue(value: Int): HttpStatusCode {
             val knownStatus = if (value in 1 until 1000) byValue[value] else null
-            return knownStatus ?: HttpStatusCode(value, "Unknown Status Code")
+            return knownStatus ?: UnknownHttpStatusCode(value)
         }
     }
 }
@@ -112,8 +269,8 @@ data class HttpStatusCode(val value: Int, val description: String) {
     ReplaceWith("ExpectationFailed", "io.ktor.http.HttpStatusCode.Companion.ExpectationFailed"),
     level = DeprecationLevel.ERROR
 )
-inline val HttpStatusCode.Companion.ExceptionFailed: HttpStatusCode
-    get() = ExpectationFailed
+inline val HttpStatusCode.Companion.ExceptionFailed
+    get() = HttpStatusCode.ExpectationFailed
 
 internal fun allStatusCodes(): List<HttpStatusCode> = listOf(
     HttpStatusCode.Continue,

@@ -9,9 +9,14 @@ package io.ktor.locations
 
 import io.ktor.application.*
 import io.ktor.http.*
-import io.ktor.util.pipeline.*
+import io.ktor.http.content.*
+import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.util.*
+import io.ktor.util.pipeline.*
+import io.ktor.utils.io.*
+import java.io.*
+import java.lang.IllegalStateException
 import kotlin.reflect.*
 
 /**
@@ -24,6 +29,68 @@ import kotlin.reflect.*
 )
 @Experimental(level = Experimental.Level.WARNING)
 annotation class KtorExperimentalLocationsAPI
+
+class TypedApplicationCall(private val applicationCall: ApplicationCall) : ApplicationCall by applicationCall
+
+@Deprecated(level = DeprecationLevel.ERROR, message = "Typed location does not have a default respond method")
+suspend fun TypedApplicationCall.respond(message: Any?): Unit =
+    throw IllegalStateException("Typed location must not have a default respond method")
+
+@Deprecated(level = DeprecationLevel.ERROR, message = "Typed location does not have a default respond method")
+suspend fun TypedApplicationCall.respondText(text: String, contentType: ContentType? = null, status: HttpStatusCode? = null, configure: OutgoingContent.() -> Unit = {}) {
+    throw IllegalStateException("Typed location must not have a default respond method")
+}
+
+@Deprecated(level = DeprecationLevel.ERROR, message = "Typed location does not have a default respond method")
+suspend fun TypedApplicationCall.respondText(contentType: ContentType? = null, status: HttpStatusCode? = null, provider: suspend () -> String) {
+    throw IllegalStateException("Typed location must not have a default respond method")
+}
+
+@Deprecated(level = DeprecationLevel.ERROR, message = "Typed location does not have a default respond method")
+suspend fun TypedApplicationCall.respondBytes(contentType: ContentType? = null, status: HttpStatusCode? = null, provider: suspend () -> ByteArray) {
+    throw IllegalStateException("Typed location must not have a default respond method")
+}
+
+@Deprecated(level = DeprecationLevel.ERROR, message = "Typed location does not have a default respond method")
+suspend fun TypedApplicationCall.respondBytes(bytes: ByteArray, contentType: ContentType? = null, status: HttpStatusCode? = null, configure: OutgoingContent.() -> Unit = {}) {
+    throw IllegalStateException("Typed location must not have a default respond method")
+}
+
+@Deprecated(level = DeprecationLevel.ERROR, message = "Typed location does not have a default respond method")
+suspend fun TypedApplicationCall.respondFile(baseDir: File, fileName: String, configure: OutgoingContent.() -> Unit = {}) {
+    throw IllegalStateException("Typed location must not have a default respond method")
+}
+
+@Deprecated(level = DeprecationLevel.ERROR, message = "Typed location does not have a default respond method")
+suspend fun TypedApplicationCall.respondFile(file: File, configure: OutgoingContent.() -> Unit = {}) {
+    throw IllegalStateException("Typed location must not have a default respond method")
+}
+
+@Deprecated(level = DeprecationLevel.ERROR, message = "Typed location does not have a default respond method")
+suspend fun TypedApplicationCall.respondTextWriter(contentType: ContentType? = null, status: HttpStatusCode? = null, writer: suspend Writer.() -> Unit) {
+    throw IllegalStateException("Typed location must not have a default respond method")
+}
+
+@Deprecated(level = DeprecationLevel.ERROR, message = "Typed location does not have a default respond method")
+suspend fun TypedApplicationCall.respondOutputStream(contentType: ContentType? = null, status: HttpStatusCode? = null, producer: suspend OutputStream.() -> Unit) {
+    throw IllegalStateException("Typed location must not have a default respond method")
+}
+
+@Deprecated(level = DeprecationLevel.ERROR, message = "Typed location does not have a default respond method")
+@KtorExperimentalAPI
+suspend fun TypedApplicationCall.respondBytesWriter(
+    contentType: ContentType? = null,
+    status: HttpStatusCode? = null,
+    producer: suspend ByteWriteChannel.() -> Unit
+) {
+    throw IllegalStateException("Typed location must not have a default respond method")
+}
+
+@KtorExperimentalLocationsAPI
+open class TypedLocation(val ctx: PipelineContext<Unit, TypedApplicationCall>) :
+    PipelineContext<Unit, TypedApplicationCall> by ctx
+
+inline val TypedLocation.call: TypedApplicationCall get() = context
 
 /**
  * Annotation for classes that will act as typed routes.
@@ -81,10 +148,10 @@ inline fun <reified T : Any> Route.location(noinline body: Route.() -> Unit): Ro
  * @param body receives an instance of typed location [T] as first parameter.
  */
 @KtorExperimentalLocationsAPI
-inline fun <reified T : Any> Route.get(noinline body: suspend PipelineContext<Unit, ApplicationCall>.(T) -> Unit): Route {
-    return location(T::class) {
+inline fun <reified L : TypedLocation> Route.get(noinline body: suspend L.(L) -> Unit): Route {
+    return location(L::class) {
         method(HttpMethod.Get) {
-            handle(body)
+            handle(body as PipelineInterceptor<Unit, ApplicationCall>)
         }
     }
 }
@@ -227,7 +294,7 @@ fun <T : Any> Route.handle(dataClass: KClass<T>, body: suspend PipelineContext<U
     }
 }
 
-/**
+/**```
  * Retrieves the current call's location or `null` if it is not available (request is not handled by a location class),
  * or not yet available (invoked too early before the locations feature takes place).
  */

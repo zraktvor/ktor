@@ -13,6 +13,7 @@ import io.ktor.locations.*
 import io.ktor.routing.*
 import io.ktor.server.testing.*
 import io.ktor.server.testing.client.*
+import io.ktor.util.pipeline.*
 import org.junit.Test
 import java.net.*
 import kotlin.test.*
@@ -36,8 +37,8 @@ class OAuthLocationsTest {
 
         application.install(Routing) {
             authenticate {
-                get<A> {}
-                get<B> {}
+                get<`A$Context`> {}
+                get<`B$Context`> {}
             }
         }
 
@@ -67,8 +68,8 @@ class OAuthLocationsTest {
 
         application.install(Routing) {
             authenticate {
-                get<A> {}
-                get<B> {}
+                get<`A$Context`> {}
+                get<`B$Context`> {}
             }
         }
 
@@ -82,8 +83,10 @@ class OAuthLocationsTest {
     }
 
     @Location("/A")
-    class A
+    class A: RespondsUnit
+    class `A$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>): TypedLocation(ctx)
 
     @Location("/B")
-    class B
+    class B: RespondsUnit
+    class `B$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>): TypedLocation(ctx)
 }

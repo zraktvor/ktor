@@ -37,8 +37,8 @@ class OAuthLocationsTest {
 
         application.install(Routing) {
             authenticate {
-                get<`A$Context`> {}
-                get<`B$Context`> {}
+                get<`A$Context`, A>(::`A$Context`) {}
+                get<`B$Context`, B>(::`B$Context`) {}
             }
         }
 
@@ -68,8 +68,8 @@ class OAuthLocationsTest {
 
         application.install(Routing) {
             authenticate {
-                get<`A$Context`> {}
-                get<`B$Context`> {}
+                get<`A$Context`, A>(::`A$Context`) {}
+                get<`B$Context`, B>(::`B$Context`) {}
             }
         }
 

@@ -44,7 +44,7 @@ class `index$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedL
 }
 
 class bye(val value: String): Responds<HttpStatusCode.Companion.OKCode>
-class `bye$Context`(val value: String, ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
+class `bye$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
     suspend fun TypedApplicationCall.respond(message: HttpStatusCode.Companion.OKCode) =
         response.pipeline.execute(this, message)
 }
@@ -53,7 +53,7 @@ class `bye$Context`(val value: String, ctx: PipelineContext<Unit, TypedApplicati
 class entity(val id: EntityID): Responds<HttpStatusCode.Companion.OKCode>
 
 @Location("entity/{id}")
-class `entity$Context`(val id: EntityID, ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
+class `entity$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
     suspend fun TypedApplicationCall.respond(message: HttpStatusCode.Companion.OKCode) =
         response.pipeline.execute(this, message)
 }
@@ -68,7 +68,7 @@ class CustomLocationsTest {
         val href = application.locations.href(index())
         assertEquals("/index", href)
         application.routing {
-            get<`index$Context`> {
+            get<`index$Context`, index>(::`index$Context`) {
                 call.respond(HttpStatusCode.OK)
             }
         }
@@ -81,7 +81,7 @@ class CustomLocationsTest {
         val href = application.locations.href(bye("farewall"))
         assertEquals("/bye?value=farewall", href)
         application.routing {
-            get<`bye$Context`> {
+            get<`bye$Context`, bye>(::`bye$Context`) {
                 assertEquals("farewall", it.value)
                 call.respond(HttpStatusCode.OK)
             }
@@ -113,7 +113,7 @@ class CustomLocationsTest {
         val href = application.locations.href(entity(EntityID(42, 999)))
         assertEquals("/entity/42-999", href)
         application.routing {
-            get<`entity$Context`> {
+            get<`entity$Context`, entity>(::`entity$Context`) {
                 assertEquals(42, it.id.typeId)
                 assertEquals(999, it.id.entityId)
                 call.respond(HttpStatusCode.OK)

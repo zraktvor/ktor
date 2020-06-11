@@ -40,7 +40,7 @@ class LocationsTest {
         val href = application.locations.href(index())
         assertEquals("/", href)
         application.routing {
-            get<`index$Context`> {
+            get<`index$Context`, index>(::`index$Context`) {
                 call.respond(HttpStatusCode.OK)
             }
         }
@@ -65,7 +65,7 @@ class LocationsTest {
             val href = application.locations.href(indexLocal())
             assertEquals("/", href)
             application.routing {
-                get<`indexLocal$Context`> {
+                get<`indexLocal$Context`, indexLocal>(::`indexLocal$Context`) {
                     call.respond(HttpStatusCode.OK)
                 }
             }
@@ -88,7 +88,7 @@ class LocationsTest {
         val href = application.locations.href(about())
         assertEquals("/about", href)
         application.routing {
-            get<`about$Context`> {
+            get<`about$Context`, about>(::`about$Context`) {
                 call.respond(HttpStatusCode.OK)
             }
         }
@@ -100,7 +100,7 @@ class LocationsTest {
     class user(val id: Int) : Responds<HttpStatusCode.Companion.OKCode>
 
     @Location("/user/{id}")
-    class `user$Context`(val id: Int, ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
+    class `user$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
         suspend fun TypedApplicationCall.respond(message: HttpStatusCode.Companion.OKCode) {
             val self: ApplicationCall = this
             self.respond(message)
@@ -112,7 +112,7 @@ class LocationsTest {
         val href = application.locations.href(user(123))
         assertEquals("/user/123", href)
         application.routing {
-            get<`user$Context`> { user ->
+            get<`user$Context`, user>(::`user$Context`) { user ->
                 assertEquals(123, user.id)
                 call.respond(HttpStatusCode.OK)
 
@@ -127,7 +127,7 @@ class LocationsTest {
     class named(val id: Int, val name: String) : Responds<HttpStatusCode.Companion.OKCode>
 
     @Location("/user/{id}/{name}")
-    class `named$Context`(val id: Int, val name: String, ctx: PipelineContext<Unit, TypedApplicationCall>) :
+    class `named$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) :
         TypedLocation(ctx) {
         suspend fun TypedApplicationCall.respond(message: HttpStatusCode.Companion.OKCode) =
             response.pipeline.execute(this, message)
@@ -138,7 +138,7 @@ class LocationsTest {
         val href = application.locations.href(named(123, "abc def"))
         assertEquals("/user/123/abc%20def", href)
         application.routing {
-            get<`named$Context`> { named ->
+            get<`named$Context`, named>(::`named$Context`) { named ->
                 assertEquals(123, named.id)
                 assertEquals("abc def", named.name)
                 call.respond(HttpStatusCode.OK)
@@ -153,7 +153,7 @@ class LocationsTest {
     class favorite(val id: Int) : Responds<HttpStatusCode.Companion.OKCode>
 
     @Location("/favorite")
-    class `favorite$Context`(val id: Int, ctx: PipelineContext<Unit, TypedApplicationCall>) :
+    class `favorite$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) :
         TypedLocation(ctx) {
         suspend fun TypedApplicationCall.respond(message: HttpStatusCode.Companion.OKCode) =
             response.pipeline.execute(this, message)
@@ -165,7 +165,7 @@ class LocationsTest {
         val href = application.locations.href(favorite(123))
         assertEquals("/favorite?id=123", href)
         application.routing {
-            get<`favorite$Context`> { favorite ->
+            get<`favorite$Context`, favorite>(::`favorite$Context`) { favorite ->
                 assertEquals(123, favorite.id)
                 call.respond(HttpStatusCode.OK)
             }
@@ -185,10 +185,10 @@ class LocationsTest {
     }
 
     @Location("/container/{id}")
-    class `pathContainer$Context`(val id: Int, ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
+    class `pathContainer$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
 
         @Location("/items")
-        class `items$Context`(val container: pathContainer, ctx: PipelineContext<Unit, TypedApplicationCall>) :
+        class `items$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) :
             TypedLocation(ctx) {
             suspend fun TypedApplicationCall.respond(message: HttpStatusCode.Companion.OKCode) =
                 response.pipeline.execute(this, message)
@@ -207,12 +207,12 @@ class LocationsTest {
         val href = application.locations.href(pathContainer.items(c))
         assertEquals("/container/123/items", href)
         application.routing {
-            get<`pathContainer$Context`.`items$Context`> { items ->
+            get<`pathContainer$Context`.`items$Context`, pathContainer.items>(`pathContainer$Context`::`items$Context`) { items ->
                 assertEquals(123, items.container.id)
                 call.respond(HttpStatusCode.OK)
             }
             assertFailsWith(LocationRoutingException::class) {
-                get<`pathContainer$Context`.`badItems$Context`> { }
+                get<`pathContainer$Context`.`badItems$Context`, pathContainer.badItems>(`pathContainer$Context`::`badItems$Context`) { }
             }
         }
         urlShouldBeHandled(href)
@@ -230,9 +230,9 @@ class LocationsTest {
     }
 
     @Location("/container")
-    class `queryContainer$Context`(val id: Int, ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
+    class `queryContainer$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
         @Location("/items")
-        class `items$Context`(val container: queryContainer, ctx: PipelineContext<Unit, TypedApplicationCall>) :
+        class `items$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) :
             TypedLocation(ctx) {
             suspend fun TypedApplicationCall.respond(message: HttpStatusCode.Companion.OKCode) =
                 response.pipeline.execute(this, message)
@@ -248,12 +248,12 @@ class LocationsTest {
         val href = application.locations.href(queryContainer.items(c))
         assertEquals("/container/items?id=123", href)
         application.routing {
-            get<`queryContainer$Context`.`items$Context`> { items ->
+            get<`queryContainer$Context`.`items$Context`, queryContainer.items>(`queryContainer$Context`::`items$Context`) { items ->
                 assertEquals(123, items.container.id)
                 call.respond(HttpStatusCode.OK)
             }
             assertFailsWith(LocationRoutingException::class) {
-                get<`queryContainer$Context`.`badItems$Context`> { }
+                get<`queryContainer$Context`.`badItems$Context`, queryContainer.badItems>(`queryContainer$Context`::`badItems$Context`) { }
             }
         }
         urlShouldBeHandled(href)
@@ -266,8 +266,6 @@ class LocationsTest {
 
     @Location("/container")
     class `optionalName$Context`(
-        val id: Int,
-        val optional: String? = null,
         ctx: PipelineContext<Unit, TypedApplicationCall>
     ) :
         TypedLocation(ctx) {
@@ -280,7 +278,7 @@ class LocationsTest {
         val href = application.locations.href(optionalName(123))
         assertEquals("/container?id=123", href)
         application.routing {
-            get<`optionalName$Context`> {
+            get<`optionalName$Context`, optionalName>(::`optionalName$Context`) {
                 assertEquals(123, it.id)
                 assertNull(it.optional)
                 call.respond(HttpStatusCode.OK)
@@ -297,8 +295,6 @@ class LocationsTest {
 
     @Location("/container")
     class `optionalIndex$Context`(
-        val id: Int,
-        val optional: Int = 42,
         ctx: PipelineContext<Unit, TypedApplicationCall>
     ) :
         TypedLocation(ctx) {
@@ -311,7 +307,7 @@ class LocationsTest {
         val href = application.locations.href(optionalIndex(123))
         assertEquals("/container?id=123&optional=42", href)
         application.routing {
-            get<`optionalIndex$Context`> {
+            get<`optionalIndex$Context`, optionalIndex>(::`optionalIndex$Context`) {
                 assertEquals(123, it.id)
                 assertEquals(42, it.optional)
                 call.respond(HttpStatusCode.OK)
@@ -327,7 +323,7 @@ class LocationsTest {
         val href = application.locations.href(optionalName(123, "text"))
         assertEquals("/container?id=123&optional=text", href)
         application.routing {
-            get<`optionalName$Context`> {
+            get<`optionalName$Context`, optionalName>(::`optionalName$Context`) {
                 assertEquals(123, it.id)
                 assertEquals("text", it.optional)
                 call.respond(HttpStatusCode.OK)
@@ -345,13 +341,13 @@ class LocationsTest {
     }
 
     @Location("/container/{id?}")
-    class `optionalContainer$Context`(val id: Int? = null, ctx: PipelineContext<Unit, TypedApplicationCall>) :
+    class `optionalContainer$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) :
         TypedLocation(ctx) {
         suspend fun TypedApplicationCall.respond(message: HttpStatusCode.Companion.OKCode) =
             response.pipeline.execute(this, message)
 
         @Location("/items")
-        class `items$Context`(val optional: String? = null, ctx: PipelineContext<Unit, TypedApplicationCall>) :
+        class `items$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) :
             TypedLocation(ctx) {
             suspend fun TypedApplicationCall.respond(message: HttpStatusCode.Companion.OKCode) =
                 response.pipeline.execute(this, message)
@@ -363,11 +359,11 @@ class LocationsTest {
         val href = application.locations.href(optionalContainer())
         assertEquals("/container", href)
         application.routing {
-            get<`optionalContainer$Context`> {
+            get<`optionalContainer$Context`, optionalContainer>(::`optionalContainer$Context`) {
                 assertEquals(null, it.id)
                 call.respond(HttpStatusCode.OK)
             }
-            get<`optionalContainer$Context`.`items$Context`> {
+            get<`optionalContainer$Context`.`items$Context`, optionalContainer.items>(`optionalContainer$Context`::`items$Context`) {
                 assertEquals("text", it.optional)
                 call.respond(HttpStatusCode.OK)
             }
@@ -401,10 +397,10 @@ class LocationsTest {
         val href = application.locations.href(simpleContainer.items())
         assertEquals("/container/items", href)
         application.routing {
-            get<`simpleContainer$Context`.`items$Context`> {
+            get<`simpleContainer$Context`.`items$Context`, simpleContainer.items>(`simpleContainer$Context`::`items$Context`) {
                 call.respond(HttpStatusCode.OK)
             }
-            get<`simpleContainer$Context`> {
+            get<`simpleContainer$Context`, simpleContainer>(::`simpleContainer$Context`) {
                 call.respond(HttpStatusCode.OK)
             }
         }
@@ -417,7 +413,7 @@ class LocationsTest {
     class tailCard(val path: List<String>) : Responds<String>
 
     @Location("/container/{path...}")
-    class `tailCard$Context`(val path: List<String>, ctx: PipelineContext<Unit, TypedApplicationCall>) :
+    class `tailCard$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) :
         TypedLocation(ctx) {
         suspend fun TypedApplicationCall.respond(message: String) =
             response.pipeline.execute(this, message)
@@ -428,7 +424,7 @@ class LocationsTest {
         val href = application.locations.href(tailCard(emptyList()))
         assertEquals("/container", href)
         application.routing {
-            get<`tailCard$Context`> {
+            get<`tailCard$Context`, tailCard>(::`tailCard$Context`) {
                 call.respond(it.path.toString())
             }
 
@@ -442,7 +438,7 @@ class LocationsTest {
     class multiquery(val value: List<Int>) : Responds<String>
 
     @Location("/container/{path...}")
-    class `multiquery$Context`(val value: List<Int>, ctx: PipelineContext<Unit, TypedApplicationCall>) :
+    class `multiquery$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) :
         TypedLocation(ctx) {
         suspend fun TypedApplicationCall.respond(message: String) =
             response.pipeline.execute(this, message)
@@ -452,7 +448,7 @@ class LocationsTest {
     class multiquery2(val name: List<String>) : Responds<String>
 
     @Location("/container/{path...}")
-    class `multiquery2$Context`(val name: List<String>, ctx: PipelineContext<Unit, TypedApplicationCall>) :
+    class `multiquery2$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) :
         TypedLocation(ctx) {
         suspend fun TypedApplicationCall.respond(message: String) =
             response.pipeline.execute(this, message)
@@ -463,7 +459,7 @@ class LocationsTest {
         val href = application.locations.href(multiquery(listOf(1, 2, 3)))
         assertEquals("/?value=1&value=2&value=3", href)
         application.routing {
-            get<`multiquery$Context`> {
+            get<`multiquery$Context`, multiquery>(::`multiquery$Context`) {
                 call.respond(it.value.toString())
             }
 
@@ -476,10 +472,10 @@ class LocationsTest {
         val href = application.locations.href(multiquery(listOf(1)))
         assertEquals("/?value=1", href)
         application.routing {
-            get<`multiquery$Context`> {
+            get<`multiquery$Context`, multiquery>(::`multiquery$Context`) {
                 call.respond("1: ${it.value}")
             }
-            get<`multiquery2$Context`> {
+            get<`multiquery2$Context`, multiquery2>(::`multiquery2$Context`){
                 call.respond("2: ${it.name}")
             }
 
@@ -492,10 +488,10 @@ class LocationsTest {
         val href = application.locations.href(multiquery2(listOf("john, mary")))
         assertEquals("/?name=john%2C+mary", href)
         application.routing {
-            get<`multiquery$Context`> {
+            get<`multiquery$Context`, multiquery>(::`multiquery$Context`) {
                 call.respond("1: ${it.value}")
             }
-            get<`multiquery2$Context`> {
+            get<`multiquery2$Context`, multiquery2>(::`multiquery2$Context`) {
                 call.respond("2: ${it.name}")
             }
 
@@ -508,7 +504,6 @@ class LocationsTest {
 
     @Location("/")
     class `multiqueryWithDefault$Context`(
-        val value: List<Int> = emptyList(),
         ctx: PipelineContext<Unit, TypedApplicationCall>
     ) : TypedLocation(ctx) {
         suspend fun TypedApplicationCall.respond(message: String) =
@@ -520,7 +515,7 @@ class LocationsTest {
         val href = application.locations.href(multiqueryWithDefault(listOf()))
         assertEquals("/", href)
         application.routing {
-            get<`multiqueryWithDefault$Context`> {
+            get<`multiqueryWithDefault$Context`, multiqueryWithDefault>(::`multiqueryWithDefault$Context`) {
                 call.respond(it.value.toString())
             }
         }
@@ -568,7 +563,7 @@ class LocationsTest {
         val href = application.locations.href(root)
         assertEquals("/", href)
         application.routing {
-            get<`root$Context`> {
+            get<`root$Context`, root>(::`root$Context`) {
                 call.respond(HttpStatusCode.OK)
             }
         }
@@ -591,7 +586,7 @@ class LocationsTest {
         val href = application.locations.href(help)
         assertEquals("/help", href)
         application.routing {
-            get<`help$Context`> {
+            get<`help$Context`, help>(::`help$Context`) {
                 call.respond(HttpStatusCode.OK)
             }
         }
@@ -621,7 +616,7 @@ class LocationsTest {
         }
 
         @Location("/{id}")
-        class `user$Context`(val id: Int, ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
+        class `user$Context`(ctx: PipelineContext<Unit, TypedApplicationCall>) : TypedLocation(ctx) {
             suspend fun TypedApplicationCall.respond(message: HttpStatusCode.Companion.OKCode) =
                 response.pipeline.execute(this, message)
         }
@@ -632,7 +627,7 @@ class LocationsTest {
         val href = application.locations.href(users.me)
         assertEquals("/users/me", href)
         application.routing {
-            get<`users$Context`.`me$Context`> {
+            get<`users$Context`.`me$Context`, users.me>(`users$Context`::`me$Context`) {
                 call.respond(HttpStatusCode.OK)
             }
         }
@@ -645,7 +640,7 @@ class LocationsTest {
         val href = application.locations.href(users.user(123))
         assertEquals("/users/123", href)
         application.routing {
-            get<`users$Context`.`user$Context`> { user ->
+            get<`users$Context`.`user$Context`, users.user>(`users$Context`::`user$Context`) { user ->
                 assertEquals(123, user.id)
                 call.respond(HttpStatusCode.OK)
             }
@@ -685,10 +680,10 @@ class LocationsTest {
     fun `overlapping paths are resolved as expected`() = withLocationsApplication {
         application.install(CallLogging)
         application.routing {
-            get<`OverlappingPath1$Context`> {
+            get<`OverlappingPath1$Context`, OverlappingPath1>(::`OverlappingPath1$Context`) {
                 call.respond(HttpStatusCode.OK)
             }
-            get<`OverlappingPath2$Context`> {
+            get<`OverlappingPath2$Context`, OverlappingPath2>(::`OverlappingPath2$Context`) {
                 call.respond(HttpStatusCode.OK)
             }
         }
@@ -719,7 +714,7 @@ class LocationsTest {
     @Test
     fun `location class with enum value`() = withLocationsApplication {
         application.routing {
-            get<`LocationWithEnum$Context`> {
+            get<`LocationWithEnum$Context`, LocationWithEnum>(::`LocationWithEnum$Context`) {
                 call.respondText(call.locations.resolve<LocationWithEnum>(call).e.name)
             }
         }
@@ -737,8 +732,6 @@ class LocationsTest {
 
     @Location("/me")
     class `LocationWithBigNumbers$Context`(
-        val bd: BigDecimal,
-        val bi: BigInteger,
         ctx: PipelineContext<Unit, TypedApplicationCall>
     ) : TypedLocation(ctx) {
         suspend fun TypedApplicationCall.respond(message: TextContent) =
@@ -761,7 +754,7 @@ class LocationsTest {
         val bi = BigInteger("123456789012345678901234567890")
 
         application.routing {
-            get<`LocationWithBigNumbers$Context`> { location ->
+            get<`LocationWithBigNumbers$Context`, LocationWithBigNumbers>(::`LocationWithBigNumbers$Context`) { location ->
                 assertEquals(bd, location.bd)
                 assertEquals(bi, location.bi)
 
@@ -782,7 +775,6 @@ class LocationsTest {
 
         @Location("/me")
         class `L$Context`(
-            val text: String, val number: Int, val longNumber: Long,
             ctx: PipelineContext<Unit, TypedApplicationCall>
         ) : TypedLocation(ctx) {
             suspend fun TypedApplicationCall.respond(message: TextContent) =
@@ -800,7 +792,7 @@ class LocationsTest {
         }
 
         application.routing {
-            get<`L$Context`> { instance ->
+            get<`L$Context`, L>(::`L$Context`) { instance ->
                 call.respondText("text = ${instance.text}, number = ${instance.number}, longNumber = ${instance.longNumber}")
             }
         }

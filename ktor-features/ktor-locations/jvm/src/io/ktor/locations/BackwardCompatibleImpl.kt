@@ -195,7 +195,7 @@ internal class BackwardCompatibleImpl(
                     ?: throw IllegalArgumentException("Class $locationClass cannot be instantiated because the constructor is missing")
 
             val declaredProperties = constructor.parameters.map { parameter ->
-                val property =
+                val property     =
                     locationClass.declaredMemberProperties.singleOrNull { property -> property.name == parameter.name }
                         ?: throw LocationRoutingException(
                             "Parameter ${parameter.name} of constructor " +

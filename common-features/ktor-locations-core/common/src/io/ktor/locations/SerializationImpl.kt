@@ -64,7 +64,7 @@ internal class SerializationImpl(
         // do not inline the variable: it is here to avoid resolution issue
         val type: KClass<*> = locationClass ?: Any::class
         return LocationInfo(
-            type,
+            locationClass ?: Any::class,
             parent,
             parentParameter,
             path,
@@ -78,19 +78,11 @@ internal class SerializationImpl(
         parentParameter: LocationPropertyInfoImplSerialization?,
         locationClass: KClass<*>?
     ): LocationInfo? {
-        parentParameter?.let { property ->
+        return parentParameter?.let { property ->
             val type = propertyType(locationClass, property.name)
             createInfo(property.propertyDescriptor, type)
-        }?.let { return it }
-
-        if (locationClass == null) {
-            return null
-        }
-
-        val backwardCompatibleParent: KClass<*>? =  backwardCompatibleParentClass(locationClass)
-
-        return backwardCompatibleParent?.let { parentClass: KClass<*> ->
-            routeService.findRoute(parentClass)?.let { _ ->
+        } ?: locationClass?.let { backwardCompatibleParentClass(locationClass) }?.let { parentClass ->
+            routeService.findRoute(parentClass)?.let {
                 createInfo(parentClass)
             }
         }

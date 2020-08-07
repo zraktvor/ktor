@@ -5,6 +5,7 @@
 package io.ktor.tests.http
 
 import io.ktor.http.*
+import io.ktor.http.auth.*
 import kotlin.test.*
 
 class HeadersTest {
@@ -21,6 +22,27 @@ class HeadersTest {
         assertEquals(2, items.count())
         assertEquals("audio/basic", items[0].value)
         assertEquals("audio/*", items[1].value)
+    }
+
+    @Test
+    fun testParseAuthHeader() {
+        val header =
+            "Digest algorithm=MD5, username=\"username\", realm=\"realm\", nonce=\"nonce\", qop=\"qop\", snonce=\"server-nonce\", cnonce=\"client-nonce\", uri=\"requested-uri\", request=\"client-digest\", message=\"message-digest\", opaque=\"opaque\""
+        val result = parseAuthorizationHeader(header)
+
+        assertNotNull(result)
+        assertTrue(result is HttpAuthHeader.Parameterized)
+
+        assertEquals("username", result.parameter("username"))
+        assertEquals("realm", result.parameter("realm"))
+        assertEquals("nonce", result.parameter("nonce"))
+        assertEquals("qop", result.parameter("qop"))
+        assertEquals("server-nonce", result.parameter("snonce"))
+        assertEquals("client-nonce", result.parameter("cnonce"))
+        assertEquals("requested-uri", result.parameter("uri"))
+        assertEquals("client-digest", result.parameter("request"))
+        assertEquals("message-digest", result.parameter("message"))
+        assertEquals("opaque", result.parameter("opaque"))
     }
 
     @Test

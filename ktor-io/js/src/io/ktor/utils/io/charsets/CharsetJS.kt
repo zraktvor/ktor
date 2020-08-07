@@ -42,7 +42,7 @@ internal actual fun CharsetEncoder.encodeImpl(input: CharSequence, fromIndex: In
 
     require(charset === Charsets.UTF_8) { "Only UTF-8 encoding is supported in JS" }
 
-    val encoder = TextEncoderCtor()  // Only UTF-8 is supported so we know that at most 6 bytes per character is used
+    val encoder = TextEncoder()  // Only UTF-8 is supported so we know that at most 6 bytes per character is used
     var start = fromIndex
     var dstRemaining = dst.writeRemaining
 

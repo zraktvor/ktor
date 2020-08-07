@@ -38,22 +38,8 @@ private val FATAL_TRUE = Any().apply {
     }
 }
 
-internal fun TextDecoderFatal(encoding: String, fatal: Boolean = true): TextDecoder {
-    // PhantomJS does not support TextDecoder yet so we use node module text-encoding for tests
-    // Node.js [TextDecoder] doesn't support ISO-8859-1
-    if (IS_NODE || js("typeof TextDecoder") == "undefined") {
-        val module = js("require('text-encoding')")
-        if (module.TextDecoder === undefined) throw IllegalStateException("TextDecoder is not supported by your browser and no text-encoding module found")
-        val ctor = module.TextDecoder
-        val objPrototype = js("Object").create(ctor.prototype)
-
-        @Suppress("UnsafeCastFromDynamic")
-        return if (fatal) ctor.call(objPrototype, encoding, FATAL_TRUE)
-        else ctor.call(objPrototype, encoding)
-    }
-
-    return if (fatal) TextDecoder(encoding, FATAL_TRUE) else TextDecoder(encoding)
-}
+internal fun TextDecoderFatal(encoding: String, fatal: Boolean = true): TextDecoder =
+    if (fatal) TextDecoder(encoding, FATAL_TRUE) else TextDecoder(encoding)
 
 internal inline fun TextDecoder.decodeStream(buffer: ArrayBufferView, stream: Boolean): String {
     decodeWrap {

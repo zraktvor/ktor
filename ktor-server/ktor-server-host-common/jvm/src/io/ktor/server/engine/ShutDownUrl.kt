@@ -71,8 +71,35 @@ public class ShutDownUrl(public val url: String, public val exitCode: Applicatio
     }
 
     /**
-     * A feature to install into application call pipeline
+     * A feature to install into application call pipeline.
      */
+    public companion object : ApplicationFeature<ApplicationCallPipeline, Configuration, ShutDownUrl> {
+        @Suppress("DEPRECATION")
+        override val key: AttributeKey<ShutDownUrl> = ApplicationCallFeature.key
+
+        override fun install(pipeline: ApplicationCallPipeline, configure: Configuration.() -> Unit): ShutDownUrl {
+            val config = Configuration()
+            configure(config)
+
+            val feature = ShutDownUrl(config.shutDownUrl, config.exitCodeSupplier)
+            pipeline.intercept(ApplicationCallPipeline.Features) {
+                if (call.request.uri == feature.url) {
+                    feature.doShutdown(call)
+                }
+            }
+
+            return feature
+        }
+    }
+
+    /**
+     * A feature to install into application call pipeline.
+     */
+    @Deprecated(
+        level = DeprecationLevel.WARNING,
+        message = "ShutdownUrl.ApplicationCallFeature is deprecated. Consider using `install(ShutDownUrl)` instead.",
+        replaceWith = ReplaceWith("ShutDownUrl")
+    )
     public object ApplicationCallFeature : ApplicationFeature<ApplicationCallPipeline, Configuration, ShutDownUrl> {
         override val key: AttributeKey<ShutDownUrl> = AttributeKey<ShutDownUrl>("shutdown.url")
 
@@ -98,7 +125,7 @@ public class ShutDownUrl(public val url: String, public val exitCode: Applicatio
         /**
          * URI to handle shutdown requests
          */
-        public var shutDownUrl: String = "/ktor/application/shutdown"
+        public var shutDownUrl: String = "/shutdown"
 
         /**
          * A function that provides process exit code by an application call

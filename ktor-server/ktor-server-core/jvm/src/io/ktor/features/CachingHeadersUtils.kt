@@ -8,7 +8,8 @@ import io.ktor.http.content.*
 import io.ktor.util.date.*
 
 
-private const val `30_DAYS_IN_MILLIS`: Long = 30 * 24 * 60 * 60
+@PublishedApi
+internal const val `30_DAYS_IN_MILLIS`: Long = 30 * 24 * 60 * 60
 
 /**
  * Enable cache headers for [LocalFileContent]. It usually sends from [ApplicationCall.respondFile] method.
@@ -16,8 +17,20 @@ private const val `30_DAYS_IN_MILLIS`: Long = 30 * 24 * 60 * 60
  * @param [duration] specifies the expiration of file from the current timestamp.
  */
 public fun CachingHeaders.Configuration.files(duration: Long = `30_DAYS_IN_MILLIS`) {
+    content<LocalFileContent>(duration)
+}
+
+
+/**
+ * Enable cache headers for a custom [OutgoingContent] type.
+ *
+ * @param [duration] specifies the expiration of file from the current timestamp.
+ */
+public inline fun <reified T: OutgoingContent> CachingHeaders.Configuration.content(
+    duration: Long = `30_DAYS_IN_MILLIS`
+) {
     options {
-        return@options if (it is LocalFileContent) {
+        return@options if (it is T) {
             CachingOptions(expires = GMTDate() + duration)
         } else null
     }

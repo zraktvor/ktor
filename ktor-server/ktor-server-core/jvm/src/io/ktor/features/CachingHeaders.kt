@@ -13,11 +13,11 @@ import io.ktor.util.pipeline.*
 
 /**
  * Feature that set [CachingOptions] headers for every response.
- * It invokes [optionsProviders] for every response and use first non null caching options
+ * It invokes [optionsProviders] for every response and use first non null caching options.
  */
 public class CachingHeaders(private val optionsProviders: List<(OutgoingContent) -> CachingOptions?>) {
     /**
-     * Configuration for [CachingHeaders] feature
+     * Configuration for [CachingHeaders] feature.
      */
     public class Configuration {
         internal val optionsProviders = mutableListOf<(OutgoingContent) -> CachingOptions?>()
@@ -27,7 +27,7 @@ public class CachingHeaders(private val optionsProviders: List<(OutgoingContent)
         }
 
         /**
-         * Registers a function that can provide caching options for a given [OutgoingContent]
+         * Registers a function that can provide caching options for a given [OutgoingContent].
          */
         public fun options(provider: (OutgoingContent) -> CachingOptions?) {
             optionsProviders.add(provider)
@@ -58,14 +58,14 @@ public class CachingHeaders(private val optionsProviders: List<(OutgoingContent)
     }
 
     /**
-     * Retrieves caching options for a given content
+     * Retrieves caching options for a given content.
      */
     public fun optionsFor(content: OutgoingContent): List<CachingOptions> {
         return optionsProviders.mapNotNullTo(ArrayList(optionsProviders.size)) { it(content) }
     }
 
     /**
-     * `ApplicationFeature` implementation for [ConditionalHeaders]
+     * `ApplicationFeature` implementation for [ConditionalHeaders].
      */
     public companion object Feature : ApplicationFeature<ApplicationCallPipeline, Configuration, CachingHeaders> {
         override val key: AttributeKey<CachingHeaders> = AttributeKey("Conditional Headers")

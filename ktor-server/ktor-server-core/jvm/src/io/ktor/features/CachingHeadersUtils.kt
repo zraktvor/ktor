@@ -17,7 +17,7 @@ internal const val `30_DAYS_IN_MILLIS`: Long = 30 * 24 * 60 * 60
  * @param [duration] specifies the expiration of file from the current timestamp.
  */
 public fun CachingHeaders.Configuration.files(duration: Long = `30_DAYS_IN_MILLIS`) {
-    content<LocalFileContent>(duration)
+    expiresFor<LocalFileContent>(duration)
 }
 
 
@@ -26,7 +26,7 @@ public fun CachingHeaders.Configuration.files(duration: Long = `30_DAYS_IN_MILLI
  *
  * @param [duration] specifies the expiration of file from the current timestamp.
  */
-public inline fun <reified T: OutgoingContent> CachingHeaders.Configuration.content(
+public inline fun <reified T: OutgoingContent> CachingHeaders.Configuration.expiresFor(
     duration: Long = `30_DAYS_IN_MILLIS`
 ) {
     options {

@@ -4,6 +4,7 @@
 
 package io.ktor.freemarker
 
+import freemarker.cache.*
 import freemarker.template.*
 import io.ktor.application.*
 import io.ktor.http.*
@@ -32,6 +33,12 @@ public class FreeMarkerContent(
  * Freemarker support feature. Provides ability to respond with [FreeMarkerContent]
  */
 public class FreeMarker(private val config: Configuration) {
+    init {
+        if (config.templateLoader == null) {
+            config.templateLoader = ClassTemplateLoader(this::class.java.classLoader, "")
+        }
+    }
+
     /**
      * A feature installing companion object
      */

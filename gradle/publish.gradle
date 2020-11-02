@@ -114,11 +114,14 @@ def signingKeyLocation = System.getenv("SIGN_KEY_LOCATION")
 
 
 if (signingKey != null) {
+    println(signingKey)
+    println(signingKeyPassphrase)
+    println(signingKeyLocation)
     project.ext["signing.gnupg.keyName"] = signingKey
     project.ext["signing.gnupg.passphrase"] = signingKeyPassphrase
 
     def keyLocation = java.nio.file.Paths.get(signingKeyLocation, "keyfile")
-    //project.ext["signing.gnupg.secretKeyRingFile"] = keyLocation
+    project.ext["signing.gnupg.secretKeyRingFile"] = keyLocation
 
     apply plugin: 'signing'
 

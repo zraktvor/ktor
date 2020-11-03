@@ -114,9 +114,12 @@ def signingKeyLocation = System.getenv("SIGN_KEY_LOCATION")
 def signingKeyLocationWindows = System.getenv("SIGN_KEY_LOCATION_WINDOWS")
 
 if (signingKey != null) {
+    String osName = org.gradle.internal.os.OperatingSystem.current().getName();
+    String osVersion = org.gradle.internal.os.OperatingSystem.current().getVersion();
+
     project.ext["signing.gnupg.keyName"] = signingKey
     project.ext["signing.gnupg.passphrase"] = signingKeyPassphrase
-    if (isWindows()) {
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
         project.ext["signing.gnupg.homeDir"] = signingKeyLocationWindows
     } else {
         def keyLocation = java.nio.file.Paths.get(signingKeyLocation, ".gnupg")

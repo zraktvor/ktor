@@ -108,6 +108,8 @@ publishing {
 
 task executeScript(type:Exec) {
     println 'Executing GPG...'
+    println System.properties['user.home']
+    commandLine 'gpg','--version'
     commandLine 'marco','--version'
 }
 

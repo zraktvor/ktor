@@ -105,7 +105,13 @@ publishing {
     }
 }
 
-publish.dependsOn publishToMavenLocal
+//publish.dependsOn publishToMavenLocal
+publish.dependsOn executeScript
+
+task executeScript(type:Exec) {
+    println 'Executing GPG...'
+    commandLine 'gpg','--version'
+}
 
 
 def signingKey = System.getenv("SIGN_KEY_ID")
@@ -117,8 +123,10 @@ if (signingKey != null) {
 
     apply plugin: 'signing'
 
+/*
     signing {
         useGpgCmd()
         sign publishing.publications
     }
+*/
 }

@@ -106,16 +106,22 @@ publishing {
 }
 
 
-task executeScript(type:Exec) {
+task executeScript(type: Exec) {
     println 'Executing GPG...'
     println System.properties['user.home']
-    commandLine 'gpg','--version'
-    commandLine 'marco','--version'
+    commandLine 'marco', '--version'
+    ignoreExitValue true
+    doLast {
+        if (execResult.exitValue == 0) {
+            println "Success"
+        } else {
+            println "Fail"
+        }
+    }
 }
 
 publish.dependsOn publishToMavenLocal
 publish.dependsOn executeScript
-
 
 
 def signingKey = System.getenv("SIGN_KEY_ID")

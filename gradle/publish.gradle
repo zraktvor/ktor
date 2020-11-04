@@ -108,9 +108,10 @@ publishing {
 
 task executeScript(type:Exec) {
     println 'Executing GPG...'
-    commandLine 'gpg','--version'
+    commandLine 'marco','--version'
 }
-//publish.dependsOn publishToMavenLocal
+
+publish.dependsOn publishToMavenLocal
 publish.dependsOn executeScript
 
 

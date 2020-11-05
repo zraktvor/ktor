@@ -1,5 +1,3 @@
-@file:Suppress("ReplaceRangeToWithUntil", "RedundantModalityModifier", "DEPRECATION", "DEPRECATION_ERROR")
-
 package io.ktor.utils.io.core
 
 import io.ktor.utils.io.bits.*
@@ -8,11 +6,16 @@ import io.ktor.utils.io.pool.*
 import org.khronos.webgl.*
 import kotlin.contracts.*
 
-@Suppress("DIFFERENT_NAMES_FOR_THE_SAME_PARAMETER_IN_SUPERTYPES")
-@Deprecated("Use Buffer instead.", replaceWith = ReplaceWith("Buffer", "io.ktor.utils.io.core.Buffer"))
+/**
+ * A read-write facade to actual buffer of fixed size. Multiple views could share the same actual buffer.
+ * Concurrent unsafe. The only concurrent-safe operation is [release].
+ * In most cases [ByteReadPacket] and [BytePacketBuilder] should be used instead.
+ */
+@Deprecated("Use Buffer instead.")
 public actual class IoBuffer actual constructor(
     memory: Memory,
-    origin: ChunkBuffer?
+    origin: ChunkBuffer?,
+    pool: ObjectPool<ChunkBuffer>
 ) : Input, Output, ChunkBuffer(memory, origin) {
     private val content: ArrayBuffer get() = memory.view.buffer
 
@@ -24,7 +27,7 @@ public actual class IoBuffer actual constructor(
             "do readXXX/writeXXX with X.reverseByteOrder() instead.",
         level = DeprecationLevel.ERROR
     )
-    actual final override var byteOrder: ByteOrder
+    actual override var byteOrder: ByteOrder
         get() = ByteOrder.BIG_ENDIAN
         set(newOrder) {
             if (newOrder != ByteOrder.BIG_ENDIAN) {
@@ -32,11 +35,11 @@ public actual class IoBuffer actual constructor(
             }
         }
 
-    final override fun peekTo(destination: Memory, destinationOffset: Long, offset: Long, min: Long, max: Long): Long {
-        return (this as Buffer).peekTo(destination, destinationOffset, offset, min, max)
-    }
+    override fun peekTo(
+        destination: Memory, destinationOffset: Long, offset: Long, min: Long, max: Long
+    ): Long = (this as Buffer).peekTo(destination, destinationOffset, offset, min, max)
 
-    final override fun tryPeek(): Int {
+    override fun tryPeek(): Int {
         return tryPeekByte()
     }
 
@@ -51,7 +54,7 @@ public actual class IoBuffer actual constructor(
     }
 
     @Deprecated("Binary compatibility.", level = DeprecationLevel.HIDDEN)
-    final override fun readAvailable(dst: IoBuffer, length: Int): Int {
+    override fun readAvailable(dst: IoBuffer, length: Int): Int {
         return (this as Buffer).readAvailable(dst, length)
     }
 
@@ -85,29 +88,28 @@ public actual class IoBuffer actual constructor(
     }
 
     @Deprecated("Binary compatibility.", level = DeprecationLevel.HIDDEN)
-    final override fun readFully(dst: IoBuffer, length: Int) {
+    override fun readFully(dst: IoBuffer, length: Int) {
         (this as Buffer).readFully(dst, length)
     }
 
-    final override fun append(csq: CharSequence?, start: Int, end: Int): Appendable {
-        val idx = appendChars(csq ?: "null", start, end)
-        if (idx != end) throw IllegalStateException("Not enough free space to append char sequence")
+    override fun append(value: CharSequence?, startIndex : Int, endIndex: Int): Appendable {
+        val idx = appendChars(value ?: "null", startIndex, endIndex)
+        if (idx != endIndex) throw IllegalStateException("Not enough free space to append char sequence")
         return this
     }
 
-    final override fun append(csq: CharSequence?): Appendable {
-        return if (csq == null) append("null") else append(csq, 0, csq.length)
-    }
+    override fun append(value: CharSequence?): Appendable =
+        if (value == null) append("null") else append(value, 0, value.length)
 
-    final override fun append(csq: CharArray, start: Int, end: Int): Appendable {
+    override fun append(csq: CharArray, start: Int, end: Int): Appendable {
         val idx = appendChars(csq, start, end)
 
         if (idx != end) throw IllegalStateException("Not enough free space to append char sequence")
         return this
     }
 
-    override fun append(c: Char): Appendable {
-        (this as Buffer).append(c)
+    override fun append(value: Char): Appendable {
+        (this as Buffer).append(value)
         return this
     }
 
@@ -215,7 +217,7 @@ public actual class IoBuffer actual constructor(
     }
 
     @Deprecated("Binary compatibility.", level = DeprecationLevel.HIDDEN)
-    final override fun readLong(): Long {
+    override fun readLong(): Long {
         return (this as Buffer).readLong()
     }
 
@@ -280,7 +282,7 @@ public actual class IoBuffer actual constructor(
     }
 
     @Deprecated("Binary compatibility.", level = DeprecationLevel.HIDDEN)
-    final override fun writeLong(v: Long) {
+    override fun writeLong(v: Long) {
         (this as Buffer).writeLong(v)
     }
 
@@ -290,7 +292,7 @@ public actual class IoBuffer actual constructor(
         return length
     }
 
-    actual final override fun flush() {
+    public actual override fun flush() {
     }
 
     @PublishedApi
@@ -327,6 +329,7 @@ public actual class IoBuffer actual constructor(
         val view = readableView()
         val rc = block(view)
         check(rc >= 0) { "The returned value from block function shouldn't be negative: $rc" }
+        @Suppress("DEPRECATION_ERROR")
         discard(rc)
         return rc
     }
@@ -347,7 +350,11 @@ public actual class IoBuffer actual constructor(
     }
 
     public actual fun release(pool: ObjectPool<IoBuffer>) {
-        releaseImpl(pool)
+        releaseImpl()
+    }
+
+    public actual fun releaseBuffer() {
+        releaseImpl()
     }
 
     actual override fun close() {
@@ -412,6 +419,7 @@ public actual class IoBuffer actual constructor(
 
         public actual val EmptyPool: ObjectPool<IoBuffer> = EmptyBufferPoolImpl
     }
+
 }
 
 public fun Buffer.readFully(dst: ArrayBuffer, offset: Int = 0, length: Int = dst.byteLength - offset) {

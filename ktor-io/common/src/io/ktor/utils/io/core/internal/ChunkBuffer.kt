@@ -16,6 +16,8 @@ public open class ChunkBuffer internal constructor(memory: Memory, origin: Chunk
     private val nextRef: AtomicRef<ChunkBuffer?> = atomic(null)
     private val refCount = atomic(1)
 
+    internal open val pool: ObjectPool<ChunkBuffer> = TODO()
+
     /**
      * Reference to an origin buffer view this was copied from
      */
@@ -56,15 +58,18 @@ public open class ChunkBuffer internal constructor(memory: Memory, origin: Chunk
     }
 
     public open fun release(pool: ObjectPool<ChunkBuffer>) {
-        if (release()) {
-            val origin = origin
-            if (origin != null) {
-                unlink()
-                origin.release(pool)
-            } else {
-                pool.recycle(this)
-            }
+        if (!release()) {
+            return
         }
+
+        val origin = origin
+        if (origin != null) {
+            unlink()
+            origin.release(this.pool)
+            return
+        }
+
+        this.pool.recycle(this)
     }
 
     internal fun unlink() {
@@ -102,6 +107,15 @@ public open class ChunkBuffer internal constructor(memory: Memory, origin: Chunk
         }
     }
 
+    final override fun reset() {
+        require(origin == null) { "Unable to reset buffer with origin" }
+
+        super.reset()
+        @Suppress("DEPRECATION")
+        attachment = null
+        nextRef.value = null
+    }
+
     /**
      * Release ref-count.
      * @return `true` if the last usage was released
@@ -111,15 +125,6 @@ public open class ChunkBuffer internal constructor(memory: Memory, origin: Chunk
             if (old <= 0) throw IllegalStateException("Unable to release: it is already released.")
             old - 1
         } == 0
-    }
-
-    final override fun reset() {
-        require(origin == null) { "Unable to reset buffer with origin" }
-
-        super.reset()
-        @Suppress("DEPRECATION")
-        attachment = null
-        nextRef.value = null
     }
 
     public companion object {

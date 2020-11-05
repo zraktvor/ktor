@@ -50,7 +50,7 @@ public abstract class ByteChannelSequentialBase(
     @Suppress("NOTHING_TO_INLINE")
     private inline fun totalPending(): Int = availableForRead + writable.size
 
-    private val flushSize: Int get() = flushBuffer.size
+    internal val flushSize: Int get() = flushBuffer.size
 
     override val availableForRead: Int
         get() = flushSize + readable.remaining.toInt()
@@ -78,7 +78,7 @@ public abstract class ByteChannelSequentialBase(
         private set
 
     private val flushMutex = SynchronizedObject()
-    private val flushBuffer: BytePacketBuilder = BytePacketBuilder()
+    internal val flushBuffer: BytePacketBuilder = BytePacketBuilder(pool = pool)
 
     internal suspend fun awaitAtLeastNBytesAvailableForWrite(count: Int) {
         while (availableForWrite < count && !closed) {
@@ -116,7 +116,7 @@ public abstract class ByteChannelSequentialBase(
      *
      * This method is reader-only safe.
      */
-    private fun prepareFlushedBytes() {
+    internal fun prepareFlushedBytes() {
         synchronized(flushMutex) {
             readable.unsafeAppend(flushBuffer)
         }
@@ -145,13 +145,13 @@ public abstract class ByteChannelSequentialBase(
         afterWrite(1)
     }
 
-    private inline fun <T : Any> reverseWrite(value: () -> T, reversed: () -> T): T {
-        @Suppress("DEPRECATION_ERROR")
-        return if (writeByteOrder == ByteOrder.BIG_ENDIAN) {
-            value()
-        } else {
-            reversed()
-        }
+    @Suppress("DEPRECATION_ERROR")
+    private inline fun <T : Any> reverseWrite(
+        value: () -> T, reversed: () -> T
+    ): T = if (writeByteOrder == ByteOrder.BIG_ENDIAN) {
+        value()
+    } else {
+        reversed()
     }
 
     override suspend fun writeShort(s: Short) {
@@ -427,7 +427,7 @@ public abstract class ByteChannelSequentialBase(
     override suspend fun readRemaining(limit: Long, headerSizeHint: Int): ByteReadPacket {
         ensureNotFailed()
 
-        val builder = BytePacketBuilder(headerSizeHint)
+        val builder = BytePacketBuilder(headerSizeHint, pool = readable.pool)
 
         val size = minOf(limit, readable.remaining)
         builder.writePacket(readable, size)
@@ -498,7 +498,11 @@ public abstract class ByteChannelSequentialBase(
 
     internal suspend fun readAvailable(dst: Buffer): Int = when {
         closedCause != null -> throw closedCause!!
-        readable.canRead() -> {
+        availableForRead > 0 -> {
+            if (flushBuffer.isNotEmpty) {
+                prepareFlushedBytes()
+            }
+
             val size = minOf(dst.writeRemaining.toLong(), readable.remaining).toInt()
             readable.readFully(dst, size)
             afterRead(size)
@@ -536,7 +540,11 @@ public abstract class ByteChannelSequentialBase(
     }
 
     override suspend fun readAvailable(dst: ByteArray, offset: Int, length: Int): Int = when {
-        readable.canRead() -> {
+        availableForRead > 0 -> {
+            if (flushBuffer.isNotEmpty) {
+                prepareFlushedBytes()
+            }
+
             val size = minOf(length.toLong(), readable.remaining).toInt()
             readable.readFully(dst, offset, size)
             afterRead(size)
@@ -707,7 +715,7 @@ public abstract class ByteChannelSequentialBase(
         }
     }
 
-    override suspend fun <A : Appendable> readUTF8LineTo(out: A, limit: Int): Boolean {
+    final override suspend fun <A : Appendable> readUTF8LineTo(out: A, limit: Int): Boolean {
         if (isClosedForRead) {
             val cause = closedCause
             if (cause != null) {
@@ -749,11 +757,12 @@ public abstract class ByteChannelSequentialBase(
             readable.release()
             writable.release()
             flushBuffer.release()
+            slot.cancel(cause)
         } else {
             flush()
+            slot.terminate()
         }
 
-        slot.cancel(cause)
         return true
     }
 
@@ -811,6 +820,9 @@ public abstract class ByteChannelSequentialBase(
         awaitAtLeastNBytesAvailableForWrite(1)
         ensureNotClosed()
     }
+
+    override fun toString(): String =
+        "ByteChannel(hash:${hashCode()}, closed: $closed, Bytes available: $availableForRead)"
 
     final override suspend fun peekTo(
         destination: Memory,

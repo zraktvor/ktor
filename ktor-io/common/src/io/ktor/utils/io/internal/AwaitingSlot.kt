@@ -8,6 +8,10 @@ import io.ktor.utils.io.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 
+private val TERMINATED = Job().apply {
+    cancel("Awaiting slot is terminated.")
+}
+
 /**
  * Exclusive slot for waiting.
  * Only one waiter allowed.
@@ -24,7 +28,7 @@ internal class AwaitingSlot {
     /**
      * Wait for other [sleep] or resume.
      */
-    public suspend fun sleep() {
+    suspend fun sleep() {
         if (trySuspend()) {
             return
         }
@@ -35,21 +39,25 @@ internal class AwaitingSlot {
     /**
      * Resume waiter.
      */
-    public fun resume() {
+    fun resume() {
         suspension.getAndSet(null)?.complete()
     }
 
     /**
      * Cancel waiter.
      */
-    public fun cancel(cause: Throwable?) {
-        val continuation = suspension.getAndSet(null) ?: return
+    fun cancel(cause: Throwable?) {
+        val continuation = suspension.getAndSet(TERMINATED) ?: return
 
         if (cause != null) {
             continuation.completeExceptionally(cause)
         } else {
             continuation.complete()
         }
+    }
+
+    fun terminate() {
+        suspension.getAndSet(TERMINATED)?.complete()
     }
 
     private suspend fun trySuspend(): Boolean {

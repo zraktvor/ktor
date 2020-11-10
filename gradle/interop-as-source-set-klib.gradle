@@ -32,9 +32,7 @@ project.ext.registerInteropAsSourceSetOutput = { interopName, sourceSet ->
 
                 def lines = manifest.readLines()
                 def modifiedLines = lines.collect { line ->
-                    line.startsWith("depends=") ? "depends=stdlib ${manifest == manifest140 ? 'org.jetbrains.kotlin.native.platform.posix' : 'posix'}" :
-                        line.startsWith("native_targets=") ? "native_targets=" :
-                            line
+                    line.startsWith("depends=") ? "depends=stdlib ${manifest == manifest140 ? 'org.jetbrains.kotlin.native.platform.posix' : 'posix'}" : line.startsWith("native_targets=") ? "native_targets=" : line
                 }
                 manifest.text = modifiedLines.join("\n")
             }

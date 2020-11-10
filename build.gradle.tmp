@@ -2,6 +2,7 @@
  * Copyright 2014-2020 JetBrains s.r.o and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
+import org.jetbrains.kotlin.gradle.testing.internal.KotlinTestReport
 import org.jetbrains.kotlin.konan.target.HostManager
 
 buildscript {
@@ -78,7 +79,6 @@ ext.configuredVersion = project.hasProperty("releaseVersion") ? project.releaseV
 ext.globalM2 = "$buildDir/m2"
 ext.publishLocal = project.hasProperty("publishLocal")
 
-apply from: "gradle/experimental.gradle"
 apply from: 'gradle/verifier.gradle'
 
 /**
@@ -116,16 +116,10 @@ def check(Object version, String libVersion, String libName) {
     }
 }
 
-def disabledExplicitApiModeProjects = [
-    "ktor-client-tests",
-    "ktor-server-benchmarks",
-    "ktor-client-json-tests",
-    "ktor-server-test-host",
-    "ktor-server-test-suites",
-    "ktor-server-tests"
-]
-
 apply from: 'gradle/compatibility.gradle'
+
+def bintrayUser = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER') ?: ""
+def bintrayApiKey = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY') ?: ""
 
 allprojects {
     group = "io.ktor"
@@ -157,16 +151,16 @@ allprojects {
         maven {
             url "https://dl.bintray.com/kotlin/kotlinx"
             credentials {
-                username = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER') ?: ""
-                password = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY') ?: ""
+                username = bintrayUser
+                password = bintrayApiKey
             }
         }
         maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
         maven {
             url "https://kotlin.bintray.com/kotlin-dev"
             credentials {
-                username = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER') ?: ""
-                password = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY') ?: ""
+                username = bintrayUser
+                password = bintrayApiKey
             }
         }
         jcenter()
@@ -190,13 +184,7 @@ allprojects {
         }
     }
 
-    configurations { testOutput }
-
     kotlin {
-        if (!disabledExplicitApiModeProjects.contains(project.name)){
-            explicitApi()
-        }
-
         sourceSets.matching { !(it.name in ["jmh", "main", "test"]) }.all {
             def srcDir = name.endsWith("Main") ? "src" : "test"
             def resourcesPrefix = name.endsWith("Test") ? "test-" : ""
@@ -204,15 +192,6 @@ allprojects {
 
             kotlin.srcDirs = ["$platform/$srcDir"]
             resources.srcDirs = ["$platform/${resourcesPrefix}resources"]
-
-            languageSettings {
-                progressiveMode = true
-                experimentalAnnotations.each { useExperimentalAnnotation(it) }
-
-                if (project.path.startsWith(":ktor-server:ktor-server") && project.name != "ktor-server-core") {
-                    useExperimentalAnnotation("io.ktor.server.engine.EngineAPI")
-                }
-            }
         }
     }
 
@@ -226,7 +205,7 @@ if (project.hasProperty("enableCodeStyle")) {
     apply from: 'gradle/codestyle.gradle'
 }
 
-task rootAllTest(type: org.jetbrains.kotlin.gradle.testing.internal.KotlinTestReport) {
+task rootAllTest(type: KotlinTestReport) {
     def rootAllTest = it
     destinationDir = new File(project.buildDir, "reports/tests/rootAllTest")
 

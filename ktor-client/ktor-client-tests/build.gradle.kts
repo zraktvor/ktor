@@ -13,10 +13,8 @@ val kotlin_version: String by project.extra
 val logback_version: String by project.extra
 val coroutines_version: String by project
 
-val ideaActive: Boolean by project.extra
-
 plugins {
-    id("kotlinx-serialization")
+    kotlin("plugin.serialization")
 }
 
 open class KtorTestServer : DefaultTask() {
@@ -78,7 +76,7 @@ kotlin.sourceSets {
             runtimeOnly(project(":ktor-client:ktor-client-cio"))
             runtimeOnly(project(":ktor-client:ktor-client-android"))
             runtimeOnly(project(":ktor-client:ktor-client-okhttp"))
-            if (project.ext["currentJdk"] as Int >= 11) {
+            if (Jdk.version >= 11) {
                 runtimeOnly(project(":ktor-client:ktor-client-java"))
             }
 //            runtimeOnly(project(":ktor-client:ktor-client-jetty"))
@@ -90,8 +88,8 @@ kotlin.sourceSets {
         }
     }
 
-    if (rootProject.ext.get("native_targets_enabled") as Boolean) {
-        if (!ideaActive) {
+    if (enableNativeTargets) {
+        if (!isIdeaActive) {
             listOf("linuxX64Test", "mingwX64Test", "macosX64Test").map { getByName(it) }.forEach {
                 it.dependencies {
                     api(project(":ktor-client:ktor-client-curl"))
@@ -148,7 +146,7 @@ val testTasks = mutableListOf(
     "darwinTest"
 )
 
-if (!ideaActive) {
+if (!isIdeaActive) {
     testTasks += listOf(
         "macosX64Test",
         "linuxX64Test",
@@ -174,7 +172,7 @@ gradle.buildFinished {
 }
 
 // TODO: this test is failing on JVM IR
-if (rootProject.ext.get("jvm_ir_enabled") as Boolean) {
+if (enableJvmIR) {
     tasks.named<Test>("jvmTest") {
         filter {
             excludeTest("io.ktor.client.tests.MultithreadedTest", "numberTest")

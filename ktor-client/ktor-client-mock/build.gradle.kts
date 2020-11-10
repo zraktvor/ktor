@@ -1,9 +1,9 @@
 
 val serialization_version: String by project.extra
 
-plugins {
-    id("kotlinx-serialization")
-}
+//plugins {
+//    id("kotlinx-serialization")
+//}
 
 kotlin.sourceSets {
     commonMain {

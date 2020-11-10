@@ -1,9 +1,8 @@
 import kotlinx.benchmark.gradle.*
 
 plugins {
+    kotlin("plugin.allopen")
     id("kotlinx.benchmark")
-    id("kotlin-allopen")
-    id("kotlinx-atomicfu")
 }
 
 allOpen {

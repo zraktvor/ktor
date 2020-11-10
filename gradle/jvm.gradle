@@ -8,9 +8,9 @@ def jdk = 6
 
 if (project.name in project.ext.jdk11Modules) {
     jdk = 11
-} else if (project.name in project.ext.jdk8Modules) {
+} else if (JdkKt.JDK8_MODULES.contains(project.name)) {
     jdk = 8
-} else if (project.name in project.ext.jdk7Modules) {
+} else if (JdkKt.JDK7_MODULES.contains(project.name)) {
     jdk = 7
 }
 
@@ -68,8 +68,8 @@ kotlin {
         }
 
         jvmTest.dependencies {
-            api 'org.jetbrains.kotlin:kotlin-test'
-            api 'org.jetbrains.kotlin:kotlin-test-junit'
+            api "org.jetbrains.kotlin:kotlin-test"
+            api "org.jetbrains.kotlin:kotlin-test-junit"
             api "junit:junit:$junit_version"
 
             api group: 'org.jetbrains.kotlin', name: 'kotlin-test-junit', version: kotlin_version

@@ -15,5 +15,5 @@ kotlin.sourceSets {
 }
 
 artifacts {
-    testOutput jarTest
+//    testOutput jarTest
 }

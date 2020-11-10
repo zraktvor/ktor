@@ -6,6 +6,7 @@ import java.util.*
 
 plugins {
     `kotlin-dsl`
+    `java-gradle-plugin`
 }
 
 val cacheRedirectorEnabled = System.getenv("CACHE_REDIRECTOR_DISABLED")?.toBoolean() != true
@@ -25,6 +26,8 @@ repositories {
     if (buildSnapshotTrain) {
         mavenLocal()
     }
+
+    mavenCentral()
 }
 
 kotlinDslPluginOptions {
@@ -49,4 +52,6 @@ sourceSets.main {
 
 dependencies {
     implementation(kotlin("gradle-plugin", version("kotlin")))
+    implementation(kotlin("compiler-embeddable", version("kotlin")))
+    implementation(kotlin("reflect", version("kotlin")))
 }

@@ -2,24 +2,16 @@ import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.targets.native.tasks.*
 
-val ideaActive: Boolean by project.extra
 val serialization_version: String by project.extra
 
 plugins {
-    id("kotlinx-serialization")
+    kotlin("plugin.serialization")
 }
 
 kotlin {
-    targets {
-        // Workaround: 1.3.60. Possible because of the new inference.
-        (this as NamedDomainObjectCollection<KotlinTarget>)
-
+    targets.apply {
         val current = mutableListOf<KotlinTarget>()
-        if (ideaActive) {
-            current.add(getByName("posix"))
-        } else {
-            current.addAll(listOf(getByName("macosX64"), getByName("linuxX64"), getByName("mingwX64")))
-        }
+        current.addAll(listOf(getByName("macosX64"), getByName("linuxX64"), getByName("mingwX64")))
 
         val paths = listOf("C:/msys64/mingw64/include/curl", "C:/Tools/msys64/mingw64/include/curl", "C:/Tools/msys2/mingw64/include/curl")
         current.filterIsInstance<KotlinNativeTarget>().forEach { platform ->
@@ -74,14 +66,14 @@ kotlin {
         }
 
         // Hack: register the Native interop klibs as outputs of Kotlin source sets:
-        if (!ideaActive) {
-            val libcurlInterop by creating
-            getByName("posixMain").dependsOn(libcurlInterop)
-            apply(from = "$rootDir/gradle/interop-as-source-set-klib.gradle")
-            (project.ext.get("registerInteropAsSourceSetOutput") as groovy.lang.Closure<*>).invoke(
-                "libcurl",
-                libcurlInterop
-            )
-        }
+//        if (!isIdeaActive) {
+//            val libcurlInterop by creating
+//            getByName("posixMain").dependsOn(libcurlInterop)
+//            apply(from = "$rootDir/gradle/interop-as-source-set-klib.gradle")
+//            (project.ext.get("registerInteropAsSourceSetOutput") as groovy.lang.Closure<*>).invoke(
+//                "libcurl",
+//                libcurlInterop
+//            )
+//        }
     }
 }

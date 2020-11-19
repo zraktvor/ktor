@@ -20,6 +20,12 @@ public actual fun ByteChannel(autoFlush: Boolean): ByteChannel {
     return ByteChannelNative(IoBuffer.Empty, autoFlush)
 }
 
+internal actual fun ByteChannelSequential(autoFlush: Boolean): ByteChannel =
+    ByteChannelNative(IoBuffer.Empty, autoFlush)
+
+internal actual fun ByteBufferChannel(autoFlush: Boolean): ByteChannel =
+    error("ByteBufferChannel is not supported on Native platform.")
+
 /**
  * Creates channel for reading from the specified byte array.
  */

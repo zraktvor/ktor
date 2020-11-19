@@ -1,6 +1,7 @@
 package io.ktor.utils.io
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.internal.BufferObjectPool
 import java.nio.*
 
 /**
@@ -11,8 +12,17 @@ public fun ByteReadChannel(content: ByteBuffer): ByteReadChannel = ByteBufferCha
 /**
  * Creates buffered channel for asynchronous reading and writing of sequences of bytes.
  */
-public actual fun ByteChannel(autoFlush: Boolean): ByteChannel = ByteBufferChannel(autoFlush = autoFlush)
+public actual fun ByteChannel(autoFlush: Boolean): ByteChannel = ByteBufferChannel(
+    autoFlush = autoFlush,
+    pool = BufferObjectPool
+)
 
+internal actual fun ByteChannelSequential(autoFlush: Boolean): ByteChannel {
+    return ByteChannelSequentialJVM(IoBuffer.Empty, autoFlush)
+}
+
+internal actual fun ByteBufferChannel(autoFlush: Boolean): ByteChannel =
+    ByteBufferChannel(autoFlush, BufferObjectPool)
 
 /**
  * Creates channel for reading from the specified byte array.
@@ -27,7 +37,6 @@ public actual fun ByteReadChannel(content: ByteArray, offset: Int, length: Int):
 @ExperimentalIoApi
 public fun ByteChannel(autoFlush: Boolean = false, exceptionMapper: (Throwable?) -> Throwable?): ByteChannel =
     object : ByteBufferChannel(autoFlush = autoFlush) {
-
         override fun close(cause: Throwable?): Boolean {
             val mappedException = exceptionMapper(cause)
             return super.close(mappedException)

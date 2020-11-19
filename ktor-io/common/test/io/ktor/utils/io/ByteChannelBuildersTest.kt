@@ -4,18 +4,16 @@
 
 package io.ktor.utils.io
 
-import io.ktor.utils.io.*
 import kotlinx.coroutines.*
 import kotlin.test.*
-import io.ktor.test.dispatcher.*
 
-class ByteChannelBuildersTest {
+class ByteChannelBuildersTest : ByteChannelParameterizedBase() {
     @Test
-    fun testWriterCancelledByChannel() = testSuspend {
+    fun testWriterCancelledByChannel() = test {
         val job = Job()
         val scope = CoroutineScope(coroutineContext + job)
 
-        val task = scope.writer {
+        val task = scope.writer(channel = createChannel()) {
             val data = ByteArray(8 * 1024)
             while (true) {
                 channel.writeFully(data)

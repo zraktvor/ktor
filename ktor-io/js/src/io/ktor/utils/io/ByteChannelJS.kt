@@ -12,6 +12,13 @@ public actual fun ByteChannel(autoFlush: Boolean): ByteChannel {
     return ByteChannelJS(IoBuffer.Empty, autoFlush)
 }
 
+internal actual fun ByteChannelSequential(autoFlush: Boolean): ByteChannel =
+    ByteChannelJS(IoBuffer.Empty, autoFlush)
+
+internal actual fun ByteBufferChannel(autoFlush: Boolean): ByteChannel {
+    error("ByteBufferChannel is unsupported on Js platform.")
+}
+
 /**
  * Creates channel for reading from the specified byte array.
  */

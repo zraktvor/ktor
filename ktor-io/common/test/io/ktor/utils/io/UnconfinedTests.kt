@@ -9,14 +9,14 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.test.*
 
-class UnconfinedTests {
+class UnconfinedTests : ByteChannelParameterizedBase() {
 
     @Test
-    fun testReaderPropagation() {
+    fun testReaderPropagation() = test {
         var resumed = false
         var startFlush = false
 
-        val origin = ByteChannel(false)
+        val origin = createChannel(false)
         GlobalScope.reader(Dispatchers.Unconfined, origin) {
             origin.readSuspendableSession {
                 await()

@@ -37,6 +37,9 @@ public interface ByteChannel : ByteReadChannel, ByteWriteChannel {
  */
 public expect fun ByteChannel(autoFlush: Boolean = false): ByteChannel
 
+internal expect fun ByteChannelSequential(autoFlush: Boolean = true): ByteChannel
+
+internal expect fun ByteBufferChannel(autoFlush: Boolean = true): ByteChannel
 
 /**
  * Creates channel for reading from the specified byte array. Please note that it could use [content] directly

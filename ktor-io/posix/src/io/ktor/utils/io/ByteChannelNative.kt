@@ -26,6 +26,17 @@ internal actual fun ByteChannelSequential(autoFlush: Boolean): ByteChannel =
 internal actual fun ByteBufferChannel(autoFlush: Boolean): ByteChannel =
     error("ByteBufferChannel is not supported on Native platform.")
 
+internal actual fun ByteBufferReadChannel(
+    content: ByteArray, offset: Int, length: Int
+): ByteReadChannel {
+    error("ByteBufferChannel is unsupported on Native platform.")
+}
+
+internal actual fun ByteReadChannelSequential(
+    content: ByteArray, offset: Int, length: Int
+): ByteReadChannel = ByteReadChannel(content, offset, length)
+
+
 /**
  * Creates channel for reading from the specified byte array.
  */

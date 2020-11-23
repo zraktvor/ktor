@@ -1,6 +1,7 @@
 package io.ktor.utils.io
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.Buffer
 import io.ktor.utils.io.internal.BufferObjectPool
 import java.nio.*
 
@@ -23,6 +24,37 @@ internal actual fun ByteChannelSequential(autoFlush: Boolean): ByteChannel {
 
 internal actual fun ByteBufferChannel(autoFlush: Boolean): ByteChannel =
     ByteBufferChannel(autoFlush, BufferObjectPool)
+
+internal actual fun ByteBufferReadChannel(
+    content: ByteArray, offset: Int, length: Int
+): ByteReadChannel {
+    if (content.isEmpty()) {
+        return ByteReadChannel.Empty
+    }
+
+    val head = IoBuffer.Pool.borrow()
+    var tail = head
+
+    var start = offset
+    val end = start + length
+    while (true) {
+        tail.reserveEndGap(8)
+        val size = minOf(end - start, tail.writeRemaining)
+        (tail as Buffer).writeFully(content, start, size)
+        start += size
+
+        if (start == end) break
+        val current = tail
+        tail = IoBuffer.Pool.borrow()
+        current.next = tail
+    }
+
+    return ByteChannelSequentialJVM(head, false).apply { close() }
+}
+
+internal actual fun ByteReadChannelSequential(
+    content: ByteArray, offset: Int, length: Int
+): ByteReadChannel = ByteReadChannel(content, offset, length)
 
 /**
  * Creates channel for reading from the specified byte array.

@@ -38,6 +38,7 @@ open class ByteChannelParameterizedBase {
 
 internal interface TestScope : CoroutineScope {
     fun createChannel(autoFlush: Boolean = false): ByteChannel
+    fun createReadChannel(initial: ByteArray): ByteReadChannel
 }
 
 internal fun interface TestScopeFactory {
@@ -45,17 +46,17 @@ internal fun interface TestScopeFactory {
 }
 
 internal class ByteBufferChannelScope(override val coroutineContext: CoroutineContext) : TestScope {
-    override fun createChannel(autoFlush: Boolean): ByteChannel {
-        return ByteBufferChannel(autoFlush)
-    }
+    override fun createChannel(autoFlush: Boolean): ByteChannel = ByteBufferChannel(autoFlush)
+
+    override fun createReadChannel(initial: ByteArray): ByteReadChannel = ByteBufferReadChannel(initial)
 
     override fun toString(): String = "ByteBufferChannel scope"
 }
 
 internal class ByteChannelSequentialScope(override val coroutineContext: CoroutineContext) : TestScope {
-    override fun createChannel(autoFlush: Boolean): ByteChannel {
-        return ByteChannelSequential(autoFlush)
-    }
+    override fun createChannel(autoFlush: Boolean): ByteChannel = ByteChannelSequential(autoFlush)
+
+    override fun createReadChannel(initial: ByteArray): ByteReadChannel = ByteReadChannelSequential(initial)
 
     override fun toString(): String = "ByteChannelSequential scope"
 }

@@ -41,6 +41,14 @@ internal expect fun ByteChannelSequential(autoFlush: Boolean = true): ByteChanne
 
 internal expect fun ByteBufferChannel(autoFlush: Boolean = true): ByteChannel
 
+internal expect fun ByteBufferReadChannel(
+    content: ByteArray, offset: Int = 0, length: Int = content.size
+): ByteReadChannel
+
+internal expect fun ByteReadChannelSequential(
+    content: ByteArray, offset: Int = 0, length: Int = content.size
+): ByteReadChannel
+
 /**
  * Creates channel for reading from the specified byte array. Please note that it could use [content] directly
  * or copy it's bytes depending on the platform

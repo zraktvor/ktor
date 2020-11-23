@@ -19,6 +19,16 @@ internal actual fun ByteBufferChannel(autoFlush: Boolean): ByteChannel {
     error("ByteBufferChannel is unsupported on Js platform.")
 }
 
+internal actual fun ByteBufferReadChannel(
+    content: ByteArray, offset: Int, length: Int
+): ByteReadChannel {
+    error("ByteBufferChannel is unsupported on Js platform.")
+}
+
+internal actual fun ByteReadChannelSequential(
+    content: ByteArray, offset: Int, length: Int
+): ByteReadChannel = ByteReadChannel(content, offset, length)
+
 /**
  * Creates channel for reading from the specified byte array.
  */

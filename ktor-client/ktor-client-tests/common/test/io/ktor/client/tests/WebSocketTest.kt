@@ -33,6 +33,7 @@ class WebSocketTest : ClientLoader() {
 //    }
 
     @Test
+    @Ignore
     fun testClose() = clientTests(skipForWebsockets) {
         config {
             install(WebSockets)

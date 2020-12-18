@@ -135,6 +135,7 @@ public class RootRouteSelector(rootPath: String = "") : RouteSelector(RouteSelec
         RouteSelectorEvaluation.qualityConstant,
         segmentIncrement = parts.size
     )
+    private val hasTrailingSlash = rootPath.endsWith('/')
 
     private val hasTrailingSlash = rootPath.endsWith('/')
 

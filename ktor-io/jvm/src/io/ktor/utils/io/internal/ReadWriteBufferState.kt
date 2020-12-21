@@ -1,12 +1,14 @@
 package io.ktor.utils.io.internal
 
+import io.ktor.utils.io.*
+import io.ktor.utils.io.LogType
 import java.nio.*
 
 // this is MAGICAL constant that is tied to the code ByteBufferChannel (that is how much it needs extra)
 internal const val RESERVED_SIZE = 8
 
 internal val EmptyByteBuffer: ByteBuffer = ByteBuffer.allocate(0)
-internal val EmptyCapacity = RingBufferCapacity(0)
+internal val EmptyCapacity = RingBufferCapacity(0, LogType())
 
 internal sealed class ReadWriteBufferState(
     @JvmField val backingBuffer: ByteBuffer,
@@ -28,8 +30,9 @@ internal sealed class ReadWriteBufferState(
 
     class Initial(
         backingBuffer: ByteBuffer,
-        reservedSize: Int = RESERVED_SIZE
-    ) : ReadWriteBufferState(backingBuffer, RingBufferCapacity(backingBuffer.capacity() - reservedSize)) {
+        reservedSize: Int = RESERVED_SIZE,
+        log: LogType = LogType()
+    ) : ReadWriteBufferState(backingBuffer, RingBufferCapacity(backingBuffer.capacity() - reservedSize, log)) {
         init {
             require(backingBuffer.position() == 0)
             require(backingBuffer.limit() == backingBuffer.capacity())

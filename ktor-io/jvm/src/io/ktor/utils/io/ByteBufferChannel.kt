@@ -19,6 +19,28 @@ import kotlin.coroutines.intrinsics.*
 internal const val DEFAULT_CLOSE_MESSAGE = "Byte channel was closed"
 private const val BYTE_BUFFER_CAPACITY = 4088
 
+internal class LogType {
+    private val log = MutableList(1000) { "" }
+    private var currentIndex = 0
+
+    private var stopped = false
+
+    fun stop() {
+        stopped = true
+    }
+
+    fun println(message: String) {
+        if (stopped) return
+        log[currentIndex] = message
+        currentIndex = (currentIndex + 1) % log.size
+    }
+
+    fun printAll() {
+        System.out.println(log.subList(currentIndex, log.lastIndex).joinToString("\n"))
+        System.out.println(log.subList(0, currentIndex).joinToString("\n"))
+    }
+}
+
 // implementation for ByteChannel
 internal open class ByteBufferChannel(
     override val autoFlush: Boolean,
@@ -26,8 +48,10 @@ internal open class ByteBufferChannel(
     internal val reservedSize: Int = RESERVED_SIZE
 ) : ByteChannel, ByteReadChannel, ByteWriteChannel, LookAheadSuspendSession, HasReadSession, HasWriteSession {
 
+    val Log = LogType()
+
     public constructor(content: ByteBuffer) : this(false, BufferObjectNoPool, 0) {
-        state = ReadWriteBufferState.Initial(content.slice(), 0).apply {
+        state = ReadWriteBufferState.Initial(content.slice(), 0, Log).apply {
             capacity.resetForRead()
         }.startWriting()
         restoreStateAfterWrite()
@@ -377,10 +401,18 @@ internal open class ByteBufferChannel(
             }
             val closed = closed
 
+            Log.println("TRY RELEASE closed=$closed force=$forceTermination state=$state cap=${state.capacity}")
             when {
-                state === ReadWriteBufferState.Terminated -> return true
-                state === ReadWriteBufferState.IdleEmpty -> ReadWriteBufferState.Terminated
+                state === ReadWriteBufferState.Terminated -> {
+                    Log.println("TRY RELEASE SUCCESS TERMINATED")
+                    return true
+                }
+                state === ReadWriteBufferState.IdleEmpty -> {
+                    Log.println("TRY RELEASE SUCCESS EMPTY")
+                    ReadWriteBufferState.Terminated
+                }
                 closed != null && state is ReadWriteBufferState.IdleNonEmpty && (state.capacity.tryLockForRelease() || closed.cause != null) -> {
+                    Log.println("TRY RELEASE SUCCESS error")
                     if (closed.cause != null) state.capacity.forceLockForRelease()
                     toRelease = state.initial
                     ReadWriteBufferState.Terminated
@@ -389,7 +421,10 @@ internal open class ByteBufferChannel(
                     toRelease = state.initial
                     ReadWriteBufferState.Terminated
                 }
-                else -> return false
+                else -> {
+                    Log.println("TRY RELEASE FAILED")
+                    return false
+                }
             }
         }
 
@@ -426,7 +461,11 @@ internal open class ByteBufferChannel(
     }
 
     private inline fun reading(block: ByteBuffer.(RingBufferCapacity) -> Boolean): Boolean {
-        val buffer = setupStateForRead() ?: return false
+        val buffer = setupStateForRead() ?: run {
+            Log.println("Can not setup state")
+            tryTerminate()
+            return false
+        }
         val capacity = state.capacity
         try {
             if (capacity.availableForRead == 0) return false
@@ -475,19 +514,17 @@ internal open class ByteBufferChannel(
         val rc = reading {
             val dstSize = dst.writeRemaining
             val part = it.tryReadAtMost(minOf(remaining(), dstSize, max))
-            if (part > 0) {
-                consumed += part
+            if (part <= 0) return@reading false
 
-                if (dstSize < remaining()) {
-                    limit(position() + dstSize)
-                }
-                dst.writeFully(this)
+            consumed += part
 
-                bytesRead(it, part)
-                true
-            } else {
-                false
+            if (dstSize < remaining()) {
+                limit(position() + dstSize)
             }
+            dst.writeFully(this)
+
+            bytesRead(it, part)
+            true
         }
 
         return if (rc && dst.canWrite() && state.capacity.availableForRead > 0)
@@ -2266,7 +2303,11 @@ internal open class ByteBufferChannel(
 
             val rc = readAsMuchAsPossible(buffer)
             remaining -= rc
-            readSuspend(1)
+            val suspend = readSuspend(1)
+            Log.println("AFTER SUSPEND $remaining $rc $state ${state.capacity} read=$totalBytesRead written=$totalBytesWritten")
+            if (rc == 0 && !suspend && !isClosedForRead) {
+                Log.println("LOOP???")
+            }
             remaining > 0L && !isClosedForRead
         }
     }
@@ -2320,7 +2361,9 @@ internal open class ByteBufferChannel(
 
     private suspend fun readSuspend(size: Int): Boolean {
         val capacity = state.capacity
-        if (capacity.availableForRead >= size) return true
+        if (capacity.availableForRead >= size) {
+            return true
+        }
 
         closed?.let { closedValue ->
             closedValue.cause?.let { rethrowClosed(it) }
@@ -2328,6 +2371,7 @@ internal open class ByteBufferChannel(
             val flush = afterCapacity.flush()
             val result = flush && afterCapacity.availableForRead >= size
             if (readOp != null) throw IllegalStateException("Read operation is already in progress")
+            Log.println("readSuspend CLOSED RETURN flush=$flush  availableForRead=${afterCapacity.availableForRead}")
             return result
         }
 

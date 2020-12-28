@@ -940,19 +940,19 @@ internal open class ByteBufferChannel(
     }
 
     override suspend fun writeByte(b: Byte) {
-        writePrimitive(1, b, ByteBufferChannel::writeByte, ByteBuffer::put)
+        writePrimitive(1, { writeByte(b) }, { put(b) })
     }
 
     override suspend fun writeShort(s: Short) {
-        writePrimitive(2, s, ByteBufferChannel::writeShort, ByteBuffer::putShort)
+        writePrimitive(2, { writeShort(s) }, { putShort(s) })
     }
 
     override suspend fun writeInt(i: Int) {
-        writePrimitive(4, i, ByteBufferChannel::writeInt, ByteBuffer::putInt)
+        writePrimitive(4, { writeInt(i) }, { putInt(i) })
     }
 
     override suspend fun writeLong(l: Long) {
-        writePrimitive(8, l, ByteBufferChannel::writeLong, ByteBuffer::putLong)
+        writePrimitive(8, { writeLong(l) }, { putLong(l) })
     }
 
     override suspend fun writeDouble(d: Double) {
@@ -963,50 +963,47 @@ internal open class ByteBufferChannel(
         writeInt(floatToRawIntBits(f))
     }
 
-    private suspend inline fun <T : Number> writePrimitive(
+    private suspend inline fun writePrimitive(
         size: Int,
-        value: T,
-        crossinline channelWriter: suspend ByteBufferChannel.(T) -> Unit,
-        crossinline bufferWriter: ByteBuffer.(T) -> Unit
+        channelWriter: suspend ByteBufferChannel.() -> Unit,
+        bufferWriter: ByteBuffer.() -> Unit
     ) {
-        joining?.let { resolveDelegation(this, it)?.let { return it.channelWriter(value) } }
+        joining?.let { resolveDelegation(this, it)?.let { return it.channelWriter() } }
 
-        val buffer = setupStateForWrite() ?: return delegatePrimitive(value, channelWriter)
+        val buffer = setupStateForWrite() ?: return delegatePrimitive(channelWriter)
         val capacity = state.capacity
 
-        if (!buffer.tryWritePrimitive(size, value, capacity, bufferWriter)) {
-            buffer.writeSuspendPrimitive(size, value, capacity, channelWriter, bufferWriter)
+        if (!buffer.tryWritePrimitive(size, capacity, bufferWriter)) {
+            buffer.writeSuspendPrimitive(size, capacity, channelWriter, bufferWriter)
         }
     }
 
-    private inline fun <T> ByteBuffer.tryWritePrimitive(
+    private inline fun ByteBuffer.tryWritePrimitive(
         size: Int,
-        value: T,
         capacity: RingBufferCapacity,
-        crossinline writer: ByteBuffer.(T) -> Unit
+        writer: ByteBuffer.() -> Unit
     ): Boolean {
         if (!capacity.tryWriteExact(size)) {
             return false
         }
         prepareWriteBuffer(this, size)
-        doWritePrimitive(size, value, this, capacity, writer)
+        doWritePrimitive(size, this, capacity, writer)
         return true
     }
 
-    private inline fun <T> doWritePrimitive(
+    private inline fun doWritePrimitive(
         size: Int,
-        value: T,
         buffer: ByteBuffer,
         capacity: RingBufferCapacity,
-        crossinline writer: ByteBuffer.(T) -> Unit
+        writer: ByteBuffer.() -> Unit
     ) {
         buffer.apply {
             if (remaining() < size) {
                 limit(capacity())
-                writer(value)
+                writer()
                 carry()
             } else {
-                writer(value)
+                writer()
             }
 
             bytesWritten(capacity, size)
@@ -1019,12 +1016,11 @@ internal open class ByteBufferChannel(
         tryTerminate()
     }
 
-    private suspend inline fun <T : Number> ByteBuffer.writeSuspendPrimitive(
+    private suspend inline fun ByteBuffer.writeSuspendPrimitive(
         size: Int,
-        value: T,
         capacity: RingBufferCapacity,
-        crossinline channelWriter: suspend ByteBufferChannel.(T) -> Unit,
-        crossinline bufferWriter: ByteBuffer.(T) -> Unit
+        channelWriter: suspend ByteBufferChannel.() -> Unit,
+        bufferWriter: ByteBuffer.() -> Unit
     ) {
         do {
             try {
@@ -1037,22 +1033,19 @@ internal open class ByteBufferChannel(
 
             if (joining != null) {
                 restoreStateAfterWrite()
-                delegatePrimitive(value, channelWriter)
+                delegatePrimitive(channelWriter)
                 return
             }
-        } while (!tryWritePrimitive(size, value, capacity, bufferWriter))
+        } while (!tryWritePrimitive(size, capacity, bufferWriter))
     }
 
-    private suspend inline fun <T : Number> delegatePrimitive(
-        value: T,
-        channelWriter: suspend ByteBufferChannel.(T) -> Unit
-    ) {
+    private suspend inline fun delegatePrimitive(channelWriter: suspend ByteBufferChannel.() -> Unit) {
         val joined = joining!!
         if (state === ReadWriteBufferState.Terminated) {
-            joined.delegatedTo.channelWriter(value)
+            joined.delegatedTo.channelWriter()
             return
         }
-        return delegateSuspend(joined) { channelWriter(value) }
+        return delegateSuspend(joined) { channelWriter() }
     }
 
     @ExperimentalIoApi
@@ -2346,7 +2339,7 @@ internal open class ByteBufferChannel(
     ): Boolean {
         while (true) {
             val current = getter()
-            check(current == null) { "Operation is already in progress"}
+            check(current == null) { "Operation is already in progress" }
 
             if (!predicate()) {
                 return false

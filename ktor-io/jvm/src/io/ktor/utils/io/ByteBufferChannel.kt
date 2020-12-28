@@ -519,14 +519,14 @@ internal open class ByteBufferChannel(
         var currentMax = max
 
         do {
+            var part = 0
             val count = reading {
                 val dstSize = dst.writeRemaining
-                val part = it.tryReadAtMost(minOf(remaining(), dstSize, currentMax))
+                part = it.tryReadAtMost(minOf(remaining(), dstSize, currentMax))
                 if (part <= 0) {
                     return@reading false
                 }
 
-                currentConsumed += part
                 if (dstSize < remaining()) {
                     limit(position() + dstSize)
                 }
@@ -537,13 +537,11 @@ internal open class ByteBufferChannel(
                 return@reading true
             }
 
-            currentConsumed += consumed
-            currentMax -= currentConsumed
+            currentConsumed += part
+            currentMax -= part
+        } while (count && dst.canWrite() && state.capacity.availableForRead > 0)
 
-            if (!count || !dst.canWrite() || state.capacity.availableForRead <= 0) {
-                return currentConsumed
-            }
-        } while (true)
+        return currentConsumed
     }
 
     private fun readAsMuchAsPossible(dst: ByteArray, offset: Int, length: Int): Int {

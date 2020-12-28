@@ -870,7 +870,6 @@ internal open class ByteBufferChannel(
             if (rc) {
                 return result
             }
-
             if (!readSuspend(size)) {
                 throw ClosedReceiveChannelException("EOF while $size bytes expected")
             }
@@ -933,7 +932,7 @@ internal open class ByteBufferChannel(
         }
     }
 
-    private suspend fun delegateSuspend(joined: JoiningState, block: suspend ByteBufferChannel.() -> Unit) {
+    private suspend inline fun delegateSuspend(joined: JoiningState, block: suspend ByteBufferChannel.() -> Unit) {
         while (true) {
             if (state === ReadWriteBufferState.Terminated) return block(joined.delegatedTo)
             writeSuspend(1)
@@ -1046,7 +1045,7 @@ internal open class ByteBufferChannel(
 
     private suspend inline fun <T : Number> delegatePrimitive(
         value: T,
-        crossinline channelWriter: suspend ByteBufferChannel.(T) -> Unit
+        channelWriter: suspend ByteBufferChannel.(T) -> Unit
     ) {
         val joined = joining!!
         if (state === ReadWriteBufferState.Terminated) {

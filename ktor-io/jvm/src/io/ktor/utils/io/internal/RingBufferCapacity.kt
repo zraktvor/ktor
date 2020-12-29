@@ -4,9 +4,9 @@ import kotlinx.atomicfu.*
 
 @Suppress("LocalVariableName")
 internal class RingBufferCapacity(private val totalCapacity: Int) {
-    var _availableForRead: AtomicInt = atomic(0)
-    var _availableForWrite: AtomicInt = atomic(totalCapacity)
-    var _pendingToFlush: AtomicInt = atomic(0)
+    val _availableForRead: AtomicInt = atomic(0)
+    val _availableForWrite: AtomicInt = atomic(totalCapacity)
+    val _pendingToFlush: AtomicInt = atomic(0)
 
     inline var availableForRead: Int
         get() = _availableForRead.value

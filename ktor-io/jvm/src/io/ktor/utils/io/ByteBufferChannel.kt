@@ -724,7 +724,7 @@ internal open class ByteBufferChannel(
                     -1
                 }
             }
-            (consumed > 0 || !dst.canWrite()) -> consumed
+            consumed > 0 || !dst.canWrite() -> consumed
             else -> readAvailableSuspend(dst)
         }
     }
@@ -2240,11 +2240,10 @@ internal open class ByteBufferChannel(
     private inline fun readSuspendPredicate(size: Int): Boolean {
         val state = state
 
-        return (state.capacity.availableForRead < size &&
-            joining == null ||
-            writeOp == null ||
-            state !== ReadWriteBufferState.IdleEmpty &&
-            state !is ReadWriteBufferState.IdleNonEmpty)
+        return state.capacity.availableForRead < size &&
+            (joining == null ||
+                writeOp == null ||
+                (state !== ReadWriteBufferState.IdleEmpty && state !is ReadWriteBufferState.IdleNonEmpty))
     }
 
     private fun suspensionForSize(size: Int, continuation: Continuation<Boolean>): Any {

@@ -628,15 +628,16 @@ internal open class ByteBufferChannel(
         var currentOffset = offset
         var currentLength = length
 
+        var consumed = 0
         do {
             if (!readSuspend(1)) {
                 throw ClosedReceiveChannelException("Unexpected EOF: expected $currentLength more bytes")
             }
-
-            val consumed = readAsMuchAsPossible(dst, currentOffset, currentLength)
             currentOffset += consumed
             currentLength -= consumed
-        } while (currentOffset < currentLength)
+
+            consumed = readAsMuchAsPossible(dst, currentOffset, currentLength)
+        } while (consumed < currentLength)
     }
 
     override fun readAvailable(min: Int, block: (ByteBuffer) -> Unit): Int {
@@ -1253,7 +1254,7 @@ internal open class ByteBufferChannel(
                                 srcBuffer.bytesRead(srcState, n)
                             }
 
-                            return@reading  true
+                            return@reading true
                         }
 
                         if (partSize <= 0) {
@@ -1496,7 +1497,7 @@ internal open class ByteBufferChannel(
             check(l == dst.limit()) { "Buffer limit modified" }
 
             result = dst.position() - position
-            check(result >= 0) { "Position has been moved backward: pushback is not supported"}
+            check(result >= 0) { "Position has been moved backward: pushback is not supported" }
             if (result < 0) throw IllegalStateException()
 
             dst.bytesWritten(state, result)
@@ -1593,7 +1594,7 @@ internal open class ByteBufferChannel(
                 throw cause
             }
 
-            check (dst.limit() == l) { "Buffer limit modified." }
+            check(dst.limit() == l) { "Buffer limit modified." }
             val actuallyWritten = dst.position() - position
             check(actuallyWritten >= 0) { "Position has been moved backward: pushback is not supported." }
 

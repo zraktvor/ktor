@@ -12,8 +12,8 @@ import kotlin.test.*
 class ByteChannelTest {
 
     @Test
-    fun testPeekFromEmptyToEmpty() = testSuspend {
-        val empty =  ByteChannel()
+    fun testPeekToFromEmptyToEmpty() = testSuspend {
+        val empty = ByteChannel()
         empty.close()
 
         withMemory(1024) {
@@ -22,8 +22,8 @@ class ByteChannelTest {
     }
 
     @Test
-    fun testPeekFrom() = testSuspend {
-        val channel =  ByteChannel()
+    fun testPeekToMemoryLessThanCapacity() = testSuspend {
+        val channel = ByteChannel()
         launch {
             repeat(4096) {
                 channel.writeInt(42)
@@ -32,10 +32,135 @@ class ByteChannelTest {
             channel.close()
         }
 
+        var total = 0L
         while (!channel.isClosedForRead) {
-            withMemory(1024) {
-                channel.peekTo(it, 1)
+            total += withMemory(1024) {
+                channel.peekTo(it, 0, min = 1, max = Long.MAX_VALUE)
             }
         }
+        assertEquals(5 * 4096, total)
+    }
+
+    @Test
+    fun testPeekToMemoryLargerThanCapacity() = testSuspend {
+        val channel = ByteChannel()
+        launch {
+            repeat(1024) {
+                channel.writeByte(42)
+            }
+            channel.close()
+        }
+
+        var total = 0L
+        while (!channel.isClosedForRead) {
+            total += withMemory(4096) {
+                channel.peekTo(it, 0, min = 1, max = Long.MAX_VALUE)
+            }
+        }
+        assertEquals(1024, total)
+    }
+
+    @Test
+    fun testPeekToMemoryEqualsToCapacity() = testSuspend {
+        val channel = ByteChannel()
+        launch {
+            repeat(1024) {
+                channel.writeByte(42)
+            }
+            channel.close()
+        }
+
+        var total = 0L
+        while (!channel.isClosedForRead) {
+            total += withMemory(1024) {
+                channel.peekTo(it, 0, min = 1, max = Long.MAX_VALUE)
+            }
+        }
+        assertEquals(1024, total)
+    }
+
+    @Test
+    fun testPeekToWithMax() = testSuspend {
+        val channel = ByteChannel()
+        launch {
+            repeat(1024) {
+                channel.writeByte(42)
+            }
+            channel.close()
+        }
+
+        val total = withMemory(1024) {
+            channel.peekTo(it, 0, min = 1, max = 16)
+        }
+        assertEquals(16, total)
+    }
+
+    @Test
+    fun testPeekToWithMin() = testSuspend {
+        val channel = ByteChannel()
+        launch {
+            repeat(16) {
+                channel.writeByte(42)
+            }
+            channel.flush()
+            delay(1000)
+            repeat(16) {
+                channel.writeByte(42)
+            }
+            channel.close()
+        }
+
+        val total = withMemory(1024) {
+            channel.peekTo(it, 0, min = 16, max = Long.MAX_VALUE)
+        }
+        assertEquals(16, total)
+    }
+
+    @Test
+    fun testPeekToWithDestinationOffset() = testSuspend {
+        val channel = ByteChannel()
+        launch {
+            repeat(1024) {
+                channel.writeByte(42)
+            }
+            channel.close()
+        }
+
+        val total = withMemory(1024) {
+            channel.peekTo(it, destinationOffset = 16, min = 1, max = Long.MAX_VALUE)
+        }
+        assertEquals(1024 - 16, total)
+    }
+
+    @Test
+    fun testPeekToWithSourceOffset() = testSuspend {
+        val channel = ByteChannel()
+        launch {
+            repeat(1024) {
+                channel.writeByte(42)
+            }
+            channel.close()
+        }
+
+        val total = withMemory(1024) {
+            channel.peekTo(it, destinationOffset = 0, offset = 16, min = 1, max = Long.MAX_VALUE)
+        }
+        assertEquals(1024 - 16, total)
+    }
+
+    @Test
+    fun testPeekToWithSourceAndDestinationOffset() = testSuspend {
+        val channel = ByteChannel()
+        launch {
+            repeat(1024) {
+                channel.writeByte(42)
+            }
+            channel.close()
+        }
+
+        val total = withMemory(1024) {
+            channel.peekTo(it, destinationOffset = 16, offset = 16, min = 1, max = Long.MAX_VALUE)
+        }
+        assertEquals(1024 - 16, total)
     }
 }

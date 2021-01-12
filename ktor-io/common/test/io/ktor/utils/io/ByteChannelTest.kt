@@ -22,7 +22,7 @@ class ByteChannelTest {
     }
 
     @Test
-    fun testPeekToMemoryLessThanCapacity() = testSuspend {
+    fun testPeekToMemoryLessThanContent() = testSuspend {
         val channel = ByteChannel()
         launch {
             repeat(4096) {
@@ -42,7 +42,7 @@ class ByteChannelTest {
     }
 
     @Test
-    fun testPeekToMemoryLargerThanCapacity() = testSuspend {
+    fun testPeekToMemoryLargerThanContent() = testSuspend {
         val channel = ByteChannel()
         launch {
             repeat(1024) {
@@ -61,7 +61,7 @@ class ByteChannelTest {
     }
 
     @Test
-    fun testPeekToMemoryEqualsToCapacity() = testSuspend {
+    fun testPeekToMemoryEqualsToContent() = testSuspend {
         val channel = ByteChannel()
         launch {
             repeat(1024) {
@@ -98,12 +98,12 @@ class ByteChannelTest {
     @Test
     fun testPeekToWithMin() = testSuspend {
         val channel = ByteChannel()
-        launch {
+        val writeJob = launch {
             repeat(16) {
                 channel.writeByte(42)
             }
             channel.flush()
-            delay(1000)
+            delay(5000)
             repeat(16) {
                 channel.writeByte(42)
             }
@@ -114,6 +114,7 @@ class ByteChannelTest {
             channel.peekTo(it, 0, min = 16, max = Long.MAX_VALUE)
         }
         assertEquals(16, total)
+        writeJob.cancel()
     }
 
     @Test

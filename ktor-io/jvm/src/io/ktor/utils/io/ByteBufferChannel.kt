@@ -2411,8 +2411,8 @@ internal open class ByteBufferChannel(
         with(destination.buffer) {
             position(position() + destinationOffset.toIntOrFail("destinationOffset"))
             val oldLimit = limit()
-            if (max != Long.MAX_VALUE) {
-                limit((max.toIntOrFail("max") + position()).coerceAtMost(oldLimit))
+            if (max < Int.MAX_VALUE) {
+                limit(minOf(max.toInt() + position(), oldLimit))
             }
 
             while (hasRemaining()) {

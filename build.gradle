@@ -294,6 +294,7 @@ afterEvaluate {
 
     configure(allCompileKotlinTasks) {
         kotlinOptions.freeCompilerArgs += ["-XXLanguage:+InlineClasses"]
+        kotlinOptions.freeCompilerArgs += ["-Xuse-14-inline-classes-mangling-scheme"]
     }
 
     task dokkaWebsite(type: dokka.getClass()) {

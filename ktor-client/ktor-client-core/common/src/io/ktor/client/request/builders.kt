@@ -178,12 +178,23 @@ public suspend fun HttpClient.headRaw(builder: HttpRequestBuilder): HttpResponse
  *
  * Tries to receive a specific type [T], if fails, an exception is thrown.
  */
+@Deprecated(
+    "Please use function with HttpRequestBuilder parameter",
+    level = DeprecationLevel.WARNING,
+    replaceWith = ReplaceWith(
+        """get {
+    url(scheme, host, port, path)
+    this.body = body
+    apply(block)
+}"""
+    )
+)
 public suspend inline fun <reified T> HttpClient.get(
     scheme: String = "http", host: String = "localhost", port: Int = DEFAULT_PORT,
     path: String = "/",
     body: Any = EmptyContent,
     block: HttpRequestBuilder.() -> Unit = {}
-): T = request {
+): T = request<T> {
     url(scheme, host, port, path)
     method = HttpMethod.Get
     this.body = body
@@ -196,12 +207,23 @@ public suspend inline fun <reified T> HttpClient.get(
  *
  * Tries to receive a specific type [T], if fails, an exception is thrown.
  */
+@Deprecated(
+    "Please use function with HttpRequestBuilder parameter",
+    level = DeprecationLevel.WARNING,
+    replaceWith = ReplaceWith(
+        """post {
+    url(scheme, host, port, path)
+    this.body = body
+    apply(block)
+}"""
+    )
+)
 public suspend inline fun <reified T> HttpClient.post(
     scheme: String = "http", host: String = "localhost", port: Int = DEFAULT_PORT,
     path: String = "/",
     body: Any = EmptyContent,
     block: HttpRequestBuilder.() -> Unit = {}
-): T = request {
+): T = request<T> {
     url(scheme, host, port, path)
     method = HttpMethod.Post
     this.body = body
@@ -214,12 +236,23 @@ public suspend inline fun <reified T> HttpClient.post(
  *
  * Tries to receive a specific type [T], if fails, an exception is thrown.
  */
+@Deprecated(
+    "Please use function with HttpRequestBuilder parameter",
+    level = DeprecationLevel.WARNING,
+    replaceWith = ReplaceWith(
+        """put {
+    url(scheme, host, port, path)
+    this.body = body
+    apply(block)
+}"""
+    )
+)
 public suspend inline fun <reified T> HttpClient.put(
     scheme: String = "http", host: String = "localhost", port: Int = DEFAULT_PORT,
     path: String = "/",
     body: Any = EmptyContent,
     block: HttpRequestBuilder.() -> Unit = {}
-): T = request {
+): T = request<T> {
     url(scheme, host, port, path)
     method = HttpMethod.Put
     this.body = body
@@ -232,12 +265,23 @@ public suspend inline fun <reified T> HttpClient.put(
  *
  * Tries to receive a specific type [T], if fails, an exception is thrown.
  */
+@Deprecated(
+    "Please use function with HttpRequestBuilder parameter",
+    level = DeprecationLevel.WARNING,
+    replaceWith = ReplaceWith(
+        """delete {
+    url(scheme, host, port, path)
+    this.body = body
+    apply(block)
+}"""
+    )
+)
 public suspend inline fun <reified T> HttpClient.delete(
     scheme: String = "http", host: String = "localhost", port: Int = DEFAULT_PORT,
     path: String = "/",
     body: Any = EmptyContent,
     block: HttpRequestBuilder.() -> Unit = {}
-): T = request {
+): T = request<T> {
     url(scheme, host, port, path)
     method = HttpMethod.Delete
     this.body = body
@@ -250,12 +294,23 @@ public suspend inline fun <reified T> HttpClient.delete(
  *
  * Tries to receive a specific type [T], if fails, an exception is thrown.
  */
+@Deprecated(
+    "Please use function with HttpRequestBuilder parameter",
+    level = DeprecationLevel.WARNING,
+    replaceWith = ReplaceWith(
+        """patch {
+    url(scheme, host, port, path)
+    this.body = body
+    apply(block)
+}"""
+    )
+)
 public suspend inline fun <reified T> HttpClient.patch(
     scheme: String = "http", host: String = "localhost", port: Int = DEFAULT_PORT,
     path: String = "/",
     body: Any = EmptyContent,
     block: HttpRequestBuilder.() -> Unit = {}
-): T = request {
+): T = request<T> {
     url(scheme, host, port, path)
     method = HttpMethod.Patch
     this.body = body
@@ -268,12 +323,23 @@ public suspend inline fun <reified T> HttpClient.patch(
  *
  * Tries to receive a specific type [T], if fails, an exception is thrown.
  */
+@Deprecated(
+    "Please use function with HttpRequestBuilder parameter",
+    level = DeprecationLevel.WARNING,
+    replaceWith = ReplaceWith(
+        """head {
+    url(scheme, host, port, path)
+    this.body = body
+    apply(block)
+}"""
+    )
+)
 public suspend inline fun <reified T> HttpClient.head(
     scheme: String = "http", host: String = "localhost", port: Int = DEFAULT_PORT,
     path: String = "/",
     body: Any = EmptyContent,
     block: HttpRequestBuilder.() -> Unit = {}
-): T = request {
+): T = request<T> {
     url(scheme, host, port, path)
     method = HttpMethod.Head
     this.body = body
@@ -286,12 +352,23 @@ public suspend inline fun <reified T> HttpClient.head(
  *
  * Tries to receive a specific type [T], if fails, an exception is thrown.
  */
+@Deprecated(
+    "Please use function with HttpRequestBuilder parameter",
+    level = DeprecationLevel.WARNING,
+    replaceWith = ReplaceWith(
+        """options {
+    url(scheme, host, port, path)
+    this.body = body
+    apply(block)
+}"""
+    )
+)
 public suspend inline fun <reified T> HttpClient.options(
     scheme: String = "http", host: String = "localhost", port: Int = DEFAULT_PORT,
     path: String = "/",
     body: Any = EmptyContent,
     block: HttpRequestBuilder.() -> Unit = {}
-): T = request {
+): T = request<T> {
     url(scheme, host, port, path)
     method = HttpMethod.Options
     this.body = body

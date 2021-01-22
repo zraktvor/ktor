@@ -11,12 +11,14 @@ import kotlin.test.*
 class TestConnectorInterfaceUsed {
     @Test
     fun testConnectorListenHost() {
-        val engine = CIOApplicationEngine(applicationEngineEnvironment {
-            connector {
-                host = "some/illegal/host/name\u0007"
-                port = 9091
+        val engine = CIOApplicationEngine(
+            applicationEngineEnvironment {
+                connector {
+                    host = "some/illegal/host/name\u0007"
+                    port = 9091
+                }
             }
-        }) {}
+        ) {}
 
         assertFails {
             engine.start()

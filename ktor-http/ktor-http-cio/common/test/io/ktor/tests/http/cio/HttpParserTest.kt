@@ -158,7 +158,7 @@ class HttpParserTest {
             """
             HTTP/1.1 100 OK
             """.trimIndent(),
-                """
+            """
             HTTP/1.1 999 OK
             """.trimIndent()
         ).forEach {

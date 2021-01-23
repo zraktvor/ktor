@@ -12,13 +12,12 @@ import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.debug.junit4.*
 import kotlinx.coroutines.scheduling.*
-import org.junit.*
+import org.junit.Rule
 import org.junit.rules.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.*
 import kotlin.coroutines.*
 import kotlin.test.*
-import kotlin.test.Test
 
 class ServerPipelineTest : CoroutineScope {
     @get:Rule
@@ -29,8 +28,9 @@ class ServerPipelineTest : CoroutineScope {
 
     private val job = SupervisorJob()
 
-    override val coroutineContext: CoroutineContext
-        by lazy { CoroutineName("PipelineTest.${testName.methodName}") + job + dispatcher }
+    override val coroutineContext: CoroutineContext by lazy {
+        CoroutineName("PipelineTest.${testName.methodName}") + job + dispatcher
+    }
 
     @get:Rule
     val timeout = CoroutinesTimeout(2000L, true)

@@ -85,7 +85,7 @@ public data class HashAndSign(val hash: HashAlgorithm, val sign: SignatureAlgori
 internal fun HashAndSign(hashValue: Byte, signValue: Byte, oidValue: String? = null): HashAndSign? {
     val hash = HashAlgorithm.byCode(hashValue)
     val sign = SignatureAlgorithm.byCode(signValue) ?: return null
-    val oid = oidValue?.let{ OID(it) }
+    val oid = oidValue?.let { OID(it) }
 
     return HashAndSign(hash, sign, oid)
 }

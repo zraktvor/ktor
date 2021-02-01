@@ -20,6 +20,17 @@ private fun withLocationsApplication(test: TestApplicationEngine.() -> Unit) = w
     test()
 }
 
+private const val TEST_CONTEXT_ROOT_PATH = "/testroot"
+
+@OptIn(KtorExperimentalLocationsAPI::class)
+private fun withLocationsApplicationWithNonEmptyContextRoot(test: TestApplicationEngine.() -> Unit) =
+    withApplication(
+        createTestEnvironment { rootPath = TEST_CONTEXT_ROOT_PATH }
+    ) {
+        application.install(Locations)
+        test()
+    }
+
 @OptIn(KtorExperimentalLocationsAPI::class)
 class LocationsTest {
     @Location("/") class index
@@ -65,6 +76,18 @@ class LocationsTest {
         }
         urlShouldBeHandled(href)
         urlShouldBeUnhandled("/about/123")
+    }
+
+    @Test fun `location with URL with non-empty context root`() = withLocationsApplicationWithNonEmptyContextRoot {
+        val href = application.locations.href(about())
+        assertEquals("$TEST_CONTEXT_ROOT_PATH/about", href)
+        application.routing {
+            get<about> {
+                call.respond(HttpStatusCode.OK)
+            }
+        }
+        urlShouldBeHandled(href)
+        urlShouldBeUnhandled("/about")
     }
 
     @Location("/user/{id}") class user(val id: Int)

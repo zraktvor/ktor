@@ -46,7 +46,7 @@ internal class BackwardCompatibleImpl(
 ) : LocationsImpl(application, routeService) {
     private data class ResolvedUriInfo(val path: String, val query: List<Pair<String, String>>)
 
-    private val rootUri = ResolvedUriInfo("", emptyList())
+    private val rootUri = ResolvedUriInfo(application.environment.rootPath, emptyList())
 
     override fun getOrCreateInfo(locationClass: KClass<*>): LocationInfo {
         return info[locationClass] ?: getOrCreateInfo(locationClass, HashSet())
